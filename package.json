@@ -1,0 +1,17 @@
+{
+  "name": "dada-components",
+  "version": "0.1.0",
+  "description": "Da — 基于原生 WebComponent 的轻量前端框架",
+  "type": "module",
+  "main": "src/da.js",
+  "files": [
+    "src/"
+  ],
+  "keywords": [
+    "webcomponent",
+    "framework",
+    "reactive",
+    "vue-like"
+  ],
+  "license": "MIT"
+}

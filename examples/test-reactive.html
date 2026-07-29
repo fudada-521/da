@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>响应式系统测试</title>
+</head>
+<body>
+  <h2>Da 响应式系统测试</h2>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { reactive, ref, computed, effect, watch } from '../src/core/reactive.js'
+
+    const out = document.getElementById('output')
+    function log(...args) {
+      out.textContent += args.join(' ') + '\n'
+    }
+
+    // 1. reactive 基础
+    const state = reactive({ count: 0, name: 'Da' })
+    effect(() => {
+      log('[effect] count =', state.count)
+    })
+    state.count = 1
+    state.count = 2
+
+    // 2. ref
+    const msg = ref('hello')
+    effect(() => {
+      log('[effect] msg =', msg.value)
+    })
+    msg.value = 'world'
+
+    // 3. computed
+    const double = computed(() => state.count * 2)
+    log('[computed] double =', double.value)
+    state.count = 5
+    log('[computed] double after update =', double.value)
+
+    // 4. watch
+    watch(() => state.count, (newVal, oldVal) => {
+      log('[watch] count changed:', oldVal, '→', newVal)
+    })
+    state.count = 10
+
+    // 5. reactive 嵌套
+    const deep = reactive({ a: { b: 1 } })
+    effect(() => {
+      log('[effect] deep.a.b =', deep.a.b)
+    })
+    deep.a.b = 42
+
+    log('\n✅ 所有测试完成')
+  </script>
+</body>
+</html>

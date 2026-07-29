@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da 框架 — 插槽示例</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🧩 插槽示例</h2>
+
+  <!-- 卡片组件模板（含命名插槽） -->
+  <template id="da-card">
+    <style>
+      :host {
+        display: block;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 16px 0;
+        font-family: sans-serif;
+      }
+      .header {
+        background: #42b883;
+        color: #fff;
+        padding: 12px 20px;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .body {
+        padding: 20px;
+        background: #fff;
+      }
+      .footer {
+        background: #f5f5f5;
+        padding: 10px 20px;
+        font-size: 13px;
+        color: #666;
+        border-top: 1px solid #e0e0e0;
+      }
+    </style>
+
+    <div class="header">
+      <slot name="title">默认标题</slot>
+    </div>
+    <div class="body">
+      <slot>默认内容</slot>
+    </div>
+    <div class="footer">
+      <slot name="footer">默认底部</slot>
+    </div>
+  </template>
+
+  <!-- 使用卡片组件 -->
+  <da-card>
+    <span slot="title">🎉 欢迎使用 Da 框架</span>
+    <p>Da 是一个基于原生 WebComponent 的前端框架，</p>
+    <p>支持命名插槽和作用域插槽。</p>
+    <span slot="footer">v0.1.0 · 2026</span>
+  </da-card>
+
+  <da-card>
+    <span slot="title">💡 提示</span>
+    <p>你可以在组件标签内放置任意 HTML 内容，</p>
+    <p>它会自动渲染到对应的插槽位置。</p>
+  </da-card>
+
+  <da-card></da-card>
+
+  <script type="module">
+    import { Component } from '../src/da.js'
+
+    class Card extends Component {
+      static tagName = 'da-card'
+      static template = '#da-card'
+    }
+
+    Card.define()
+  </script>
+</body>
+</html>

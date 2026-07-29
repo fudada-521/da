@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da UI 组件演示</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 640px; margin: 40px auto; padding: 0 20px;
+      background: #f8f9fa; color: #333;
+    }
+    h2 { color: #35495e; }
+    .section {
+      background: #fff; border-radius: 12px; padding: 20px;
+      margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .section h3 { margin: 0 0 12px; font-size: 14px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    label { display: block; margin-bottom: 4px; font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <h2>🎨 Da UI 组件</h2>
+  <p style="color:#666;margin-bottom:24px;">框架内置的生产级组件，开箱即用。</p>
+
+  <!-- ===== Button ===== -->
+  <div class="section">
+    <h3>Button 按钮</h3>
+    <div class="row">
+      <da-button type="default">默认</da-button>
+      <da-button type="primary">主要</da-button>
+      <da-button type="danger">危险</da-button>
+      <da-button type="text">文本</da-button>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <da-button type="primary" size="small">小按钮</da-button>
+      <da-button type="primary" size="medium">中按钮</da-button>
+      <da-button type="primary" size="large">大按钮</da-button>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <da-button type="primary" disabled>禁用</da-button>
+      <da-button type="primary" loading>加载中</da-button>
+    </div>
+  </div>
+
+  <!-- ===== Input ===== -->
+  <div class="section">
+    <h3>Input 输入框</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <da-input placeholder="默认输入框"></da-input>
+      <da-input placeholder="密码" type="password"></da-input>
+      <da-input placeholder="数字" type="number" value="42"></da-input>
+      <da-input placeholder="禁用状态" disabled value="不可编辑"></da-input>
+      <da-input placeholder="可清空" clearable value="点右边 ✕ 清空"></da-input>
+    </div>
+  </div>
+
+  <!-- ===== 组合使用 ===== -->
+  <div class="section">
+    <h3>组合示例</h3>
+    <template id="da-login-form">
+      <style>
+        :host { display: block; max-width: 320px; }
+        .field { margin-bottom: 12px; }
+        .field label { display: block; margin-bottom: 4px; font-size: 13px; color: #666; }
+        .actions { display: flex; gap: 8px; margin-top: 16px; }
+      </style>
+
+      <div class="field">
+        <label>用户名</label>
+        <da-input da-model="username" placeholder="请输入用户名"></da-input>
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <da-input da-model="password" type="password" placeholder="请输入密码"></da-input>
+      </div>
+      <div class="actions">
+        <da-button type="primary" :disabled="!canLogin" @click="handleLogin">登 录</da-button>
+        <da-button @click="reset">重 置</da-button>
+      </div>
+      <p style="font-size:13px;color:#999;margin-top:8px;">
+        👤 {{ username || '未登录' }}
+      </p>
+    </template>
+
+    <da-login-form></da-login-form>
+  </div>
+
+  <script type="module">
+    import { Component } from '../src/da.js'
+    import '../src/components/Button.js'
+    import '../src/components/Input.js'
+
+    // 登录表单示例组件
+    class LoginForm extends Component {
+      static tagName = 'da-login-form'
+      static template = '#da-login-form'
+
+      username = ''
+      password = ''
+
+      get canLogin() {
+        return this.username.trim().length > 0 && this.password.length > 0
+      }
+
+      handleLogin() {
+        alert(`欢迎，${this.username}！`)
+      }
+
+      reset() {
+        this.username = ''
+        this.password = ''
+      }
+    }
+
+    LoginForm.define()
+  </script>
+</body>
+</html>

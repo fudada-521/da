@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8" /></head>
+<body>
+  <h2>mount 测试</h2>
+  <div id="app">
+    <p>{{ msg }}</p>
+  </div>
+  <button id="btn">点我改 msg</button>
+
+  <script type="module">
+    import { mount } from '../src/da.js'
+    const state = mount('#app', { msg: 'Hello' })
+    console.log('state.msg =', state.msg)
+
+    document.getElementById('btn').onclick = () => {
+      console.log('before:', state.msg)
+      state.msg = 'Hi'
+      console.log('after:', state.msg)
+    }
+  </script>
+</body>
+</html>

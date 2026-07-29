@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da 框架 — 列表过渡示例</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    h2 { color: #42b883; }
+    code { background: #e8f5e9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    hr { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+    button { padding: 6px 14px; border: 1px solid #42b883; background: #fff; color: #42b883; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    button:hover { background: #42b883; color: #fff; }
+    button.danger { border-color: #e74c3c; color: #e74c3c; }
+    button.danger:hover { background: #e74c3c; color: #fff; }
+    input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+
+    /* 列表过渡动画 */
+    .list-enter-active, .list-leave-active {
+      transition: all 0.4s ease;
+    }
+    .list-enter-from {
+      opacity: 0; transform: translateX(-30px);
+    }
+    .list-leave-to {
+      opacity: 0; transform: translateX(30px);
+    }
+    /* 离开的元素脱离流式布局，后面的元素自然上移 */
+    .list-leave-active {
+      position: absolute;
+    }
+    /* 移动过渡 */
+    .list-move {
+      transition: transform 0.4s ease;
+    }
+  </style>
+
+  <h2>📋 列表过渡</h2>
+  <p>使用 <code>&lt;da-transition-group&gt;</code> + FLIP 动画</p>
+
+  <hr />
+
+  <!-- 全部用原生 JS 操作 DOM 以绕开模板编译限制 -->
+  <da-transition-group id="listGroup" name="list" tag="ul" style="list-style: none; padding: 0; position: relative; min-height: 40px;">
+    <!-- 动态由 JS 填充 -->
+  </da-transition-group>
+
+  <div class="toolbar">
+    <input id="newItem" placeholder="输入新项..." style="flex:1;" />
+    <button id="addBtn">添加</button>
+    <button id="shuffleBtn" class="danger">随机排序</button>
+  </div>
+
+  <p style="font-size: 13px; color: #999;">
+    💡 添加/删除时自动过渡，排序时使用 FLIP 动画。
+    <br />CSS 关键：<code>.list-leave-active { position: absolute; }</code> 保证移除动画流畅。
+  </p>
+
+  <hr />
+
+  <h3>🎨 更多过渡效果</h3>
+
+  <style>
+    .bounce-enter-active {
+      animation: bounce-in 0.4s;
+    }
+    .bounce-leave-active {
+      animation: bounce-in 0.3s reverse;
+    }
+    @keyframes bounce-in {
+      0%   { transform: scale(0); opacity: 0; }
+      50%  { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .bounce-move {
+      transition: transform 0.4s ease;
+    }
+    .bounce-leave-active {
+      position: absolute;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      margin: 4px;
+      border-radius: 20px;
+      background: #e8f5e9;
+      border: 1px solid #42b883;
+      font-size: 13px;
+    }
+    .chip button {
+      padding: 0 4px; border: none; background: none; cursor: pointer; font-size: 16px; line-height: 1;
+    }
+  </style>
+
+  <da-transition-group id="chipGroup" name="bounce" tag="div">
+    <!-- 动态由 JS 填充 -->
+  </da-transition-group>
+
+  <div class="toolbar">
+    <button id="addChip">添加标签</button>
+    <button id="removeChip" class="danger">移除最后一个</button>
+  </div>
+
+  <script type="module">
+    import { Da } from '../src/da.js'
+
+    // ────────────── 列表示例 ──────────────
+    let items = ['🍎 苹果', '🍊 橘子', '🍋 柠檬', '🍇 葡萄']
+    let idCounter = 0
+
+    function renderList() {
+      const group = document.getElementById('listGroup')
+      // 清除所有子节点
+      while (group.firstChild) group.removeChild(group.firstChild)
+
+      items.forEach((text, i) => {
+        const li = document.createElement('li')
+        li.dataset.index = i
+        li.style.cssText = `
+          display: flex; align-items: center; gap: 8px;
+          padding: 10px 14px; border-bottom: 1px solid #eee;
+          background: #fff; width: 100%; box-sizing: border-box;
+        `
+        li.innerHTML = `
+          <span style="flex:1">${text}</span>
+          <button class="danger" style="padding:2px 8px;font-size:12px;">✕</button>
+        `
+        li.querySelector('button').addEventListener('click', () => {
+          items.splice(i, 1)
+          renderList()
+        })
+        group.appendChild(li)
+      })
+    }
+
+    document.getElementById('addBtn').addEventListener('click', () => {
+      const input = document.getElementById('newItem')
+      const text = input.value.trim()
+      if (!text) return
+      items.push(`#${++idCounter} ${text}`)
+      input.value = ''
+      renderList()
+    })
+
+    document.getElementById('newItem').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') document.getElementById('addBtn').click()
+    })
+
+    document.getElementById('shuffleBtn').addEventListener('click', () => {
+      // Fisher-Yates
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]]
+      }
+      renderList()
+    })
+
+    // ────────────── Chip 示例 ──────────────
+    const chips = ['CSS', 'HTML', 'JavaScript', 'WebComponent']
+
+    function renderChips() {
+      const group = document.getElementById('chipGroup')
+      while (group.firstChild) group.removeChild(group.firstChild)
+
+      chips.forEach((text, i) => {
+        const span = document.createElement('span')
+        span.className = 'chip'
+        span.innerHTML = `${text} <button data-index="${i}">×</button>`
+        span.querySelector('button').addEventListener('click', () => {
+          chips.splice(i, 1)
+          renderChips()
+        })
+        group.appendChild(span)
+      })
+    }
+
+    document.getElementById('addChip').addEventListener('click', () => {
+      const names = ['Vue', 'React', 'Svelte', 'Angular', 'Solid', 'Qwik', 'Preact']
+      const name = names[Math.floor(Math.random() * names.length)]
+      chips.push(name)
+      renderChips()
+    })
+
+    document.getElementById('removeChip').addEventListener('click', () => {
+      if (chips.length > 0) chips.pop()
+      renderChips()
+    })
+
+    // 初始渲染
+    renderList()
+    renderChips()
+  </script>
+</body>
+</html>

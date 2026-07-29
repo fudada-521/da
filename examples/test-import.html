@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8" /></head>
+<body>
+  <h2>import 测试</h2>
+  <p>打开控制台看日志</p>
+
+  <script type="module">
+    console.log('1. script start')
+    try {
+      const mod = await import('../src/da.js')
+      console.log('2. da.js loaded', Object.keys(mod))
+      const state = mod.reactive({ msg: 'hello' })
+      console.log('3. state.msg =', state.msg)
+    } catch (e) {
+      console.error('import error:', e)
+    }
+  </script>
+</body>
+</html>

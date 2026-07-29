@@ -1,0 +1,71 @@
+<!-- @format -->
+
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0" />
+        <title>Da — da-model 示例</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                max-width: 480px;
+                margin: 40px auto;
+                padding: 0 20px;
+            }
+            h2 {
+                color: #42b883;
+            }
+            .card {
+                border: 1px solid #e0e0e0;
+                border-radius: 12px;
+                padding: 24px;
+                margin-top: 16px;
+            }
+            .row {
+                margin-top: 12px;
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+            .output {
+                background: #f0f9f4;
+                padding: 16px;
+                border-radius: 8px;
+                font-size: 18px;
+                min-height: 24px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>🔄 da-model</h2>
+
+        <div
+            class="card"
+            id="app">
+            <div class="row">
+                <da-input
+                    da-model:value="msg"
+                    placeholder="输入点什么..."></da-input>
+            </div>
+            <div class="row">
+                <button @click="setMsg('Hello Da!')">设为 Hello</button>
+                <button @click="clearMsg()">清空</button>
+            </div>
+            <div class="row output">{{ msg || '等待输入...' }}</div>
+        </div>
+
+        <script type="module">
+            import { mount } from "../src/da.js";
+            import "../src/components/Input.js";
+
+            const state = mount("#app", {
+                msg: "",
+                setMsg(val) { state.msg = val; },
+                clearMsg() { state.msg = ""; },
+            });
+        </script>
+    </body>
+</html>

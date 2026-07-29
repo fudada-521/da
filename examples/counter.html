@@ -1,0 +1,23 @@
+<!-- @format -->
+
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0" />
+        <title>Da 框架 — 计数器示例</title>
+    </head>
+    <body>
+        <h2>🔢 计数器</h2>
+
+        <da-counter :title="'我的计数器'"></da-counter>
+        <da-counter :title="'我的计数器'"></da-counter>
+
+        <script type="module">
+            import Counter from "./components/Counter.js";
+            Counter.define();
+        </script>
+    </body>
+</html>

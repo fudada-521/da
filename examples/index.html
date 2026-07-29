@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da 框架 — 示例总览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      padding: 40px 20px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    header h1 {
+      font-size: 36px;
+      color: #42b883;
+      font-weight: 700;
+    }
+    header p {
+      color: #666;
+      margin-top: 8px;
+      font-size: 15px;
+    }
+    header .version {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 12px;
+      background: #e8f5e9;
+      color: #42b883;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    header .tagline {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #999;
+    }
+
+    .stats {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      text-align: center;
+      padding: 16px 24px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      min-width: 100px;
+    }
+    .stat-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #42b883;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .section {
+      margin-bottom: 36px;
+    }
+    .section h2 {
+      font-size: 18px;
+      color: #35495e;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #42b883;
+      display: inline-block;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      transition: box-shadow 0.2s, transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(66,184,131,0.15);
+      transform: translateY(-2px);
+    }
+    .card .icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    .card .desc {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.5;
+      flex: 1;
+    }
+    .card .tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .card .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .tag-core { background: #e8f5e9; color: #42b883; }
+    .tag-dir   { background: #e3f2fd; color: #1976d2; }
+    .tag-slot  { background: #fff3e0; color: #e65100; }
+    .tag-trans { background: #f3e5f5; color: #7b1fa2; }
+    .tag-api   { background: #fce4ec; color: #c62828; }
+    .tag-test  { background: #e0f2f1; color: #00695c; }
+
+    .card .status {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: auto;
+      margin-top: 8px;
+    }
+    .status-ok { background: #e8f5e9; color: #2e7d32; }
+    .status-warn { background: #fff3e0; color: #e65100; }
+
+    .note {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #f57f17;
+      margin-top: 24px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid #eee;
+      color: #bbb;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚡ Da</h1>
+      <p>基于原生 WebComponent 的轻量前端框架</p>
+      <span class="version">v0.2.0</span>
+      <div class="tagline">零构建 · 零依赖 · 纯原生</div>
+    </header>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">11</div>
+        <div class="stat-label">内置指令</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">10</div>
+        <div class="stat-label">示例页面</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">8</div>
+        <div class="stat-label">源代码模块</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0</div>
+        <div class="stat-label">外部依赖</div>
+      </div>
+    </div>
+
+    <!-- ===== 组件基础 ===== -->
+    <div class="section">
+      <h2>📦 组件基础</h2>
+      <div class="card-grid">
+        <a href="counter.html" class="card">
+          <div class="icon">🔢</div>
+          <h3>计数器</h3>
+          <div class="desc">最简组件示例，展示 Class 风格组件、Props、事件绑定与 da-show。</div>
+          <div class="tags">
+            <span class="tag tag-core">Component</span>
+            <span class="tag tag-dir">da-on</span>
+            <span class="tag tag-dir">da-bind</span>
+            <span class="tag tag-dir">da-show</span>
+            <span class="tag tag-api">Props</span>
+          </div>
+        </a>
+
+        <a href="todo.html" class="card">
+          <div class="icon">📋</div>
+          <h3>待办列表</h3>
+          <div class="desc">完整 CRUD 示例，列表渲染、双向绑定、条件渲染。</div>
+          <div class="tags">
+            <span class="tag tag-core">Component</span>
+            <span class="tag tag-dir">da-for</span>
+            <span class="tag tag-dir">da-model</span>
+            <span class="tag tag-dir">da-if</span>
+            <span class="tag tag-dir">da-bind:class</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ===== 插槽 ===== -->
+    <div class="section">
+      <h2>🧩 插槽系统</h2>
+      <div class="card-grid">
+        <a href="slots.html" class="card">
+          <div class="icon">📦</div>
+          <h3>基础插槽</h3>
+          <div class="desc">默认插槽与命名插槽的用法，实现卡片布局组件。</div>
+          <div class="tags">
+            <span class="tag tag-slot">默认插槽</span>
+            <span class="tag tag-slot">命名插槽</span>
+          </div>
+        </a>
+
+        <a href="scoped-slots.html" class="card">
+          <div class="icon">🔄</div>
+          <h3>作用域插槽</h3>
+          <div class="desc">子组件通过 :prop 暴露数据，父组件用 da-slot 接收。含命名 + 作用域组合。</div>
+          <div class="tags">
+            <span class="tag tag-slot">da-slot</span>
+            <span class="tag tag-slot">#简写</span>
+            <span class="tag tag-slot">命名+作用域</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ===== 表单与事件 ===== -->
+    <div class="section">
+      <h2>⌨️ 表单与事件</h2>
+      <div class="card-grid">
+        <a href="keyboard.html" class="card">
+          <div class="icon">⌨️</div>
+          <h3>键盘修饰符</h3>
+          <div class="desc">.enter / .esc / 方向键 / .ctrl + 组合键 / 按钮系统修饰符。</div>
+          <div class="tags">
+            <span class="tag tag-dir">da-on</span>
+            <span class="tag tag-dir">.enter</span>
+            <span class="tag tag-dir">.esc</span>
+            <span class="tag tag-dir">.ctrl</span>
+          </div>
+        </a>
+
+        <a href="component-model.html" class="card">
+          <div class="icon">🔄</div>
+          <h3>组件 da-model</h3>
+          <div class="desc">在自定义组件上使用 da-model，多个 da-model 绑定，$emit 事件派发。</div>
+          <div class="tags">
+            <span class="tag tag-dir">da-model</span>
+            <span class="tag tag-api">$emit</span>
+            <span class="tag tag-core">组件通信</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ===== 过渡动画 ===== -->
+    <div class="section">
+      <h2>🎬 过渡与动画</h2>
+      <div class="card-grid">
+        <a href="transition.html" class="card">
+          <div class="icon">🌫️</div>
+          <h3>过渡动画</h3>
+          <div class="desc">渐入渐出、滑动、弹性缩放、out-in 模式、过渡事件监听。</div>
+          <div class="tags">
+            <span class="tag tag-trans">&lt;da-transition&gt;</span>
+            <span class="tag tag-trans">CSS过渡</span>
+            <span class="tag tag-trans">out-in</span>
+          </div>
+        </a>
+
+        <a href="transition-group.html" class="card">
+          <div class="icon">📋</div>
+          <h3>列表过渡</h3>
+          <div class="desc">列表增删过渡、FLIP 排序动画、CSS keyframes 弹性动画。</div>
+          <div class="tags">
+            <span class="tag tag-trans">&lt;da-transition-group&gt;</span>
+            <span class="tag tag-trans">FLIP</span>
+            <span class="tag tag-trans">列表动画</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ===== 自定义指令 ===== -->
+    <div class="section">
+      <h2>🧰 自定义指令</h2>
+      <div class="card-grid">
+        <a href="custom-directive.html" class="card">
+          <div class="icon">✨</div>
+          <h3>自定义指令</h3>
+          <div class="desc">注册自定义指令、da-highlight 高亮、da-focus 自动聚焦、da-number 格式化、da-once 一次性渲染。</div>
+          <div class="tags">
+            <span class="tag tag-api">Da.register</span>
+            <span class="tag tag-dir">自定义</span>
+            <span class="tag tag-dir">da-once</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ===== 内部测试 ===== -->
+    <div class="section">
+      <h2>🧪 内部测试</h2>
+      <div class="card-grid">
+        <a href="test-reactive.html" class="card">
+          <div class="icon">⚡</div>
+          <h3>响应式系统测试</h3>
+          <div class="desc">测试 reactive / ref / computed / effect / watch 核心功能。</div>
+          <div class="tags">
+            <span class="tag tag-test">reactive</span>
+            <span class="tag tag-test">ref</span>
+            <span class="tag tag-test">computed</span>
+            <span class="tag tag-test">watch</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="note">
+      ⚡ 所有页面直接双击或在浏览器中打开即可运行，无需构建工具。
+      <br />
+      源码位于 <code>dada/src/</code>，示例位于 <code>dada/examples/</code>。
+      <br />
+      各示例的组件类已提取到 <code>dada/src/components/</code>，可独立查看和复用。
+    </div>
+
+    <footer>
+      Da Framework &mdash; 基于原生 WebComponent &middot; MIT License
+    </footer>
+  </div>
+</body>
+</html>

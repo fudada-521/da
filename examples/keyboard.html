@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da 框架 — 键盘修饰符示例</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    h2 { color: #42b883; }
+    kbd { background: #f0f0f0; border: 1px solid #ccc; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h2>⌨️ 键盘修饰符示例</h2>
+  <da-keyboard-demo></da-keyboard-demo>
+
+  <script type="module">
+    import KeyboardDemo from './components/KeyboardDemo.js'
+    KeyboardDemo.define()
+  </script>
+</body>
+</html>
