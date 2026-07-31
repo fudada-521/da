@@ -243,12 +243,18 @@ function processElement(el, bindings, instance) {
                 modifiers: {},
             });
         } else if (name.startsWith(EVENT_SHORTHAND)) {
-            const arg = name.slice(1);
+            // @click.prevent.ctrl → arg=click, modifiers={ prevent, ctrl }
+            const parts = name.slice(1).split(".");
+            const arg = parts[0];
+            const modifiers = {};
+            for (let i = 1; i < parts.length; i++) {
+                modifiers[parts[i]] = true;
+            }
             directives.push({
                 name: "on",
                 expression: value.trim(),
                 arg,
-                modifiers: {},
+                modifiers,
             });
         }
     });

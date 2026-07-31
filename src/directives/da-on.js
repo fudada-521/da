@@ -62,7 +62,16 @@ const directive = {
   },
 
   update(el, binding) {
-    unbindEvent(el, binding)
+    // 只解绑本次绑定自己注册的监听器
+    // （同一元素上多个 @keyup.up/.down/.left/.right 事件名相同，不能按事件名清空）
+    if (binding._daHandler) {
+      el.removeEventListener(binding._daEvent, binding._daHandler, binding._daOptions)
+      if (el._daEvents) {
+        el._daEvents = el._daEvents.filter(
+          (it) => !(it.event === binding._daEvent && it.handler === binding._daHandler)
+        )
+      }
+    }
     bindEvent(el, binding)
   },
 
@@ -101,20 +110,13 @@ function bindEvent(el, binding) {
 
   el.addEventListener(eventName, handler, options)
 
+  // 记录本次绑定注册的监听器，供 update 精确解绑
+  binding._daEvent = eventName
+  binding._daHandler = handler
+  binding._daOptions = options
+
   if (!el._daEvents) el._daEvents = []
   el._daEvents.push({ event: eventName, handler, options })
-}
-
-function unbindEvent(el, binding) {
-  if (!el._daEvents) return
-  const { arg } = binding
-  el._daEvents = el._daEvents.filter(({ event, handler, options }) => {
-    if (event === arg) {
-      el.removeEventListener(event, handler, options)
-      return false
-    }
-    return true
-  })
 }
 
 // ============================================================
