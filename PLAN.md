@@ -1,285 +1,122 @@
-# Da 框架 — 第一期实现计划
+# Da 框架 — 架构与演进计划
 
-## 一、项目概况
-
-**名称**：Da（出自 Dada Components）
-**语言**：JavaScript
-**目标**：基于 WebComponent 原生实现一套类 Vue3 的前端框架
+> 当前版本：0.2.0 · 零依赖、纯原生 WebComponent + Proxy
+> 详细任务追踪见 [TODO.md](TODO.md)
 
 ---
 
-## 二、目录结构
+## 一、定位
+
+Da（Dada Components）是一个基于原生 WebComponent 与 Proxy 的类 Vue3 轻量前端框架：
 
 ```
-dada/
-├── src/
-│   ├── core/
-│   │   ├── index.js            # 核心导出
-│   │   ├── Component.js        # Da.Component 基类
-│   │   ├── reactive.js         # 响应式系统 (ref, reactive, computed, watch, effect)
-│   │   ├── compile.js          # 模板编译器 — 解析 template → 指令绑定树
-│   │   └── scheduler.js        # 异步更新调度器（批量更新，防抖）
-│   ├── directives/
-│   │   ├── index.js            # 指令注册表
-│   │   ├── v-bind.js           # :attr / v-bind
-│   │   ├── v-on.js             # @event / v-on，含 .prevent .stop 修饰符
-│   │   ├── v-if.js             # v-if / v-else-if / v-else
-│   │   ├── v-for.js            # v-for 列表渲染
-│   │   ├── v-model.js          # 双向绑定
-│   │   └── v-show.js           # display 切换
-│   ├── index.js                # 入口，暴露 Da 命名空间
-│   └── shared/
-│       └── utils.js            # 通用工具函数
-├── examples/
-│   ├── counter.html
-│   ├── todo.html
-│   └── slots.html
-├── README.md
-├── PLAN.md
-└── package.json
+零构建、零依赖、纯原生
 ```
+
+- 模板字符串 + 编译器，而非 `h()`/render 函数
+- 指令系统以 `mount / update / unmount` 三段式扩展
+- Shadow DOM 组件 + 原生 Custom Elements
 
 ---
 
-## 三、架构设计
+## 二、当前架构
 
-### 3.1 核心分层
-
-```
-┌─────────────────────────────────────────┐
-│            Da 框架架构总览              │
-├─────────────────────────────────────────┤
-│  上层：模板编译器 (compile.js)          │
-│  ┌ 解析 <template> 提取指令和插值      │
-│  ┌ 建立 响应式变量 → DOM 更新函数 映射  │
-├─────────────────────────────────────────┤
-│  中层：指令系统 (directives/)           │
-│  ┌ v-bind / v-on / v-if / v-for / ...  │
-│  ┌ 每个指令 => mount() + update() 接口  │
-├─────────────────────────────────────────┤
-│  下层：响应式系统 (reactive.js)         │
-│  ┌ reactive / ref / computed / watch    │
-│  ┌ 依赖追踪 (track) + 触发更新 (trigger)│
-├─────────────────────────────────────────┤
-│  基座：Component 基类 (Component.js)    │
-│  ┌ extends HTMLElement                  │
-│  ┌ Shadow DOM + 生命周期                │
-│  ┌ Props 声明与校验                     │
-│  ┌ 插槽系统 (命名/作用域)               │
-│  ┌ 自动注册组件                         │
-└─────────────────────────────────────────┘
-```
-
-### 3.2 更新流程
+### 2.1 核心分层
 
 ```
-template 字符串  →  compile() 编译
-                       │
-                       ▼
-              指令绑定树 (数组)
-         [v-bind, v-if, v-for, ...]
-        每个绑定了依赖的响应式变量
-                       │
-          connectedCallback 时执行
-                       │
-                       ▼
-               mount() 每个指令
-             (首次渲染 DOM 节点)
-                       │
-          响应式数据变化 → trigger()
-                       │
-                       ▼
-            scheduler 批处理队列
-                       │
-                       ▼
-            update() 受影响指令
-          (细粒度更新，只改相关 DOM)
+┌──────────────────────────────────────────────┐
+│  模板编译器 (compile.js)                      │
+│  ├ 模板 DOM → 指令绑定树                     │
+│  ├ {{ }} 插值 + da-* / :attr / @event 简写    │
+├──────────────────────────────────────────────┤
+│  指令系统 (directives/)                       │
+│  ├ bind / on / if / for / model / show / ... │
+│  ├ 每个指令 => mount() + update() + unmount() │
+├──────────────────────────────────────────────┤
+│  响应式系统 (reactive.js)                     │
+│  ├ reactive / ref / computed / effect / watch│
+│  ├ Proxy 深度代理 + 数组方法拦截              │
+│  ├ track / trigger（含 scheduler 分发）       │
+├──────────────────────────────────────────────┤
+│  组件基类 (Component.js)                      │
+│  ├ extends HTMLElement + Shadow DOM          │
+│  ├ Props / 生命周期 / 自动注册               │
+│  ├ 插槽系统（默认 / 命名 / 作用域）           │
+└──────────────────────────────────────────────┘
+```
+
+### 2.2 源码结构
+
+```
+src/
+├── da.js                     # 入口（Da 命名空间 + 自动注册内置组件）
+├── core/
+│   ├── Component.js          # 组件基类
+│   ├── reactive.js           # 响应式系统（含数组拦截、scheduler 分发）
+│   ├── compile.js            # 模板编译器 + 作用域插槽模板编译
+│   ├── scheduler.js          # 微任务批量更新
+│   ├── Transition.js         # 进入/离开过渡
+│   └── TransitionGroup.js    # 列表过渡（FLIP）
+├── directives/               # 指令实现（index.js 注册表）
+└── components/               # 内置组件
+    ├── Button.js             # <da-button>
+    └── Input.js              # <da-input>（value / modelValue 双约定）
 ```
 
 ---
 
-## 四、组件系统设计
+## 三、能力清单
 
-### 4.1 Component 基类核心结构
+### ✅ 已实现
 
-```javascript
-class DaComponent extends HTMLElement {
-  static props = {}          // props 声明
-  static tagName = ''        // 自定义标签名（留空则自动生成 kebab-case）
-
-  // 生命周期
-  onInit() {}                // 实例化时
-  onMounted() {}             // 挂载到 DOM
-  onUpdated() {}             // 响应式更新后
-  onUnmounted() {}           // 从 DOM 移除
-
-  // 内部
-  this.$props               // 解析后的 props
-  this.$el                  // Shadow root
-  this.$slots               // 插槽数据
-
-  // 响应式（自动）
-  this.xxx = value          // 字段自动变为响应式
-  this.$data                // 内部响应式代理
-}
-```
-
-### 4.2 生命周期映射到 WebComponent 标准
-
-| WebComponent 原生        | Da 生命周期        | 说明                   |
-|--------------------------|---------------------|------------------------|
-| `constructor()`          | 内部调用 `onInit()` | 创建 Shadow DOM        |
-| `connectedCallback()`    | 内部调用 `onMounted()` | 初始化渲染 + 指令绑定 |
-| `attributeChangedCallback()` | 内部更新 `$props` | props 变化触发重渲染   |
-| `disconnectedCallback()` | 内部调用 `onUnmounted()` | 清理指令和响应式依赖 |
-
-### 4.3 Props 机制
-
-```javascript
-class MyComp extends Da.Component {
-  static props = {
-    name:    { type: String,  default: 'World' },
-    count:   { type: Number,  default: 0 },
-    items:   { type: Array,   default: () => [] },
-    visible: { type: Boolean, default: true },
-  }
-}
-```
-- 从 HTML attribute 读取字符串
-- 根据 `type` 做类型转换（字符串 → Number / Boolean / Array / Object）
-- Array 和 Object 用 `JSON.parse` 解析
-- 变更时通过 `observedAttributes` + `attributeChangedCallback` 自动响应
-
-### 4.4 自动注册机制
-
-```javascript
-class MyComp extends Da.Component {
-  static tagName = 'my-comp'   // 可选，显式指定标签名
-  // 不指定则自动使用类名的 kebab-case: MyComp → 'my-comp'
-}
-// 模块加载后自动执行 customElements.define()
-```
-
-### 4.5 插槽系统 (命名 + 作用域)
-
-- 默认插槽映射到 Shadow DOM 的 `<slot></slot>`
-- 命名插槽：`<slot name="header">`、`<div slot="header">`
-- 作用域插槽：在 render 函数或模板中通过自定义属性传递数据，插槽内通过 `data-*` 或指令获取
-
----
-
-## 五、响应式系统设计
-
-### 5.1 核心 API
-
-| API | 用途 |
+| 能力 | 说明 |
 |------|------|
-| `reactive(obj)` | 对象深度响应式代理 |
-| `ref(value)` | 单一值响应式容器 |
-| `computed(fn)` | 计算属性，惰性求值 + 缓存 |
-| `effect(fn)` | 副作用自动追踪依赖 |
-| `watch(source, cb)` | 监听响应式数据变化 |
+| 组件系统 | Class 定义、Props 类型转换、生命周期、Shadow DOM、自动注册 |
+| 响应式 | reactive/ref/computed/effect/watch、**数组方法拦截**、**scheduler 分发** |
+| 指令 | bind（class/style 对象式）、on（键盘/系统/鼠标修饰符）、if/else、for、model、show、text、html、once、cloak、pre |
+| 插槽 | 默认 / 命名 / 作用域（`da-slot` / `#` 简写，插槽内容支持全部指令） |
+| 过渡 | `<da-transition>`（name/mode/appear/钩子）、`<da-transition-group>` |
+| 内置组件 | `<da-button>`、`<da-input>`（`da-model` / `da-model:value` / 静态预填） |
+| 挂载 | `mount()` 独立挂载任意 DOM 子树，无需自定义组件 |
+| 全局 API | define / register / lookup / nextTick / version / toRef(s) |
 
-### 5.2 原理
+### ⚠️ 已知限制（见 [TODO.md](TODO.md) 第三期）
 
-- 使用 `Proxy` 实现 `reactive`（对象深度代理）
-- 使用 getter/setter 实现 `ref`（.value 访问）
-- 运行时维护一个 `activeEffect` 栈，收集依赖（`target → key → Set<effect>` 的 Map 结构）
-- 数据变化时遍历依赖的 effect，触发更新
-
-### 5.3 与 Class 集成
-
-```javascript
-class Counter extends Da.Component {
-  count = 0          // 自动被转换为响应式
-  // 等价于内部执行 this.$data = reactive({ count: 0 })
-  // this.count 的 getter/setter 委托给 this.$data.count
-}
-```
+- `da-for` 全量重建节点（非 keyed diff）→ `da-transition-group` 的 leave/FLIP 动画不生效
+- `da-once` / `da-pre` 为占位实现（仅打标记，未真正跳过编译/更新）
+- getter 未纳入依赖追踪（依赖 evaluateExpression 的实例兜底）
+- 更新为粗粒度：任何字段变化触发全量渲染
 
 ---
 
-## 六、指令系统设计
+## 四、演进路线
 
-### 6.1 指令接口规范
+### ✅ 第一期：骨架与核心
+组件基类、响应式、编译器、基础指令、调度器、插槽、示例
 
-每个指令文件导出一个对象：
+### ✅ 第二期：能力拓展
+作用域插槽、键盘/系统/鼠标修饰符、过渡动画、自定义指令、动态指令参数、独立挂载、内置 UI 组件
 
-```javascript
-{
-  name: 'bind',              // 指令名（不含 v- 前缀）
-  mount(el, binding, vnode)  // 首次绑定
-  update(el, binding, vnode) // 更新时
-  unmount(el)                // 解绑时清理
-}
-```
+### 🔄 第三期：框架加固（进行中）
 
-`binding` 对象结构类似 Vue：
-
-```javascript
-{
-  value: ...,        // 指令绑定的值
-  oldValue: ...,     // 旧值
-  arg: 'click',      // 参数（如 v-on:click 的 click）
-  modifiers: { prevent: true },  // 修饰符
-  instance: ...      // 组件实例引用
-}
-```
-
-### 6.2 第一期指令清单
-
-| 指令 | 功能 | 特殊说明 |
-|------|------|---------|
-| `v-bind` | 绑定 attribute/property | 支持 `:attr` 缩写；支持 class/style 特殊处理 |
-| `v-on` | 事件绑定 | 支持 `.prevent` `.stop` `.once` 修饰符；支持 `@click` 缩写 |
-| `v-if` | 条件渲染（增删节点） | 配合 `v-else-if` `v-else`；使用注释节点占位 |
-| `v-for` | 列表渲染 | 支持 `(item, index) in items` 语法；配合 key 优化 |
-| `v-model` | 表单双向绑定 | 支持 input/textarea/select；支持 `.lazy` `.trim` `.number` |
-| `v-show` | 条件显示 | 切换 `display` CSS 属性 |
-
-### 6.3 模板编译器核心逻辑
-
-1. 将模板字符串解析为 DOM 树（`DOMParser` 或 `innerHTML`）
-2. 遍历 DOM 节点，识别指令 attribute 和 `{{ }}` 插值
-3. 建立指令绑定列表，提取依赖的响应式变量名
-4. 返回编译产物：绑定树 + 清理函数
-
----
-
-## 七、第一期实现范围总结
-
-### ✅ 第一期包含
-
-| 模块 | 内容 |
-|------|------|
-| **响应式系统** | `reactive`、`ref`、`computed`、`effect`、`watch` |
-| **Component 基类** | Shadow DOM、生命周期、Props 声明与校验、自动注册 |
-| **模板编译器** | 解析 `<template>`、指令绑定、插值编译 |
-| **指令** | `v-bind` `v-on` `v-if/else` `v-for` `v-model` `v-show` |
-| **插槽** | 命名插槽 + 作用域插槽 |
-| **更新调度** | 异步批量更新（Microtask 调度） |
-| **示例** | 至少 3 个示例页面 |
-
-### ❌ 第一期不包含（后续考虑）
-
-- `v-cloak`、`v-pre`、`v-once` — 实用性较低
-- 自定义指令 — 短期内内部够用
-- `Teleport`、`Suspense` 等高级内置组件 — 超过第一期范围
-- 开发工具（DevTools 插件、热更新等）
-- TypeScript 类型定义
-
----
-
-## 八、实施步骤
-
-| 步骤 | 内容 | 产出 |
+| 阶段 | 内容 | 状态 |
 |------|------|------|
-| 1 | 搭建项目骨架：目录、`package.json`、入口文件 | 目录结构 |
-| 2 | 实现响应式系统：`reactive.js` | `ref`、`reactive`、`computed`、`effect`、`watch` |
-| 3 | 实现 `Component.js` 基类：生命周期、Shadow DOM、props、自动注册 | 组件基类 |
-| 4 | 实现模板编译器 `compile.js` | 模板 → 指令绑定树 |
-| 5 | 实现更新调度器 `scheduler.js` | 批量异步更新 |
-| 6 | 逐个实现指令：v-bind → v-on → v-if → v-for → v-model → v-show | 6 个指令 |
-| 7 | 实现插槽系统（命名 + 作用域） | 插槽支持 |
-| 8 | 集成测试：编写 `src/index.js` 导出 `Da` 命名空间 | 框架入口 |
-| 9 | 编写示例页面 + README | 示例 + 文档 |
+| **P0 正确性核心** | 数组响应式、trigger 分发 `_scheduler`、da-model 与内置组件约定统一 | ✅ 2026-07 完成 |
+| **P1 功能落地** | `da-for` keyed diff、`da-once`/`da-pre` 真正实现、getter 纳入响应式 | ⬜ |
+| **P2 架构演进** | 细粒度依赖追踪、编译/求值缓存、测试体系、类型定义、DevTools | ⬜ |
+| **P3 文档一致性** | 修正 README 中"文档写了但用不了"的特性说明 | ⬜ |
+
+### 🔭 远期
+- `<DaTeleport>` / `<DaKeepAlive>` 内置组件
+- 指令级过渡（`v-enter` / `v-leave`）
+- 全局错误处理 `Da.errorHandler`、`nextTick` 语义修正
+- 开发者工具（组件树 / 响应式面板 / 性能面板）
+
+---
+
+## 五、设计原则
+
+1. **零依赖、浏览器原生** — 保持 ES Module + Custom Elements v1 即可运行
+2. **模板字符串 + 编译器** — 类 Vue 的 `{{ }}` / 指令心智模型，无需 JSX
+3. **指令三段式接口** — `mount / update / unmount`，便于扩展自定义指令
+4. **文档承诺 = 实际行为** — 每个 README 声称的特性都必须真实可用，避免"写了但用不了"

@@ -1,237 +1,200 @@
-<!DOCTYPE html>
+<!-- @format -->
+
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Da 框架 — 过渡动画示例</title>
-  <style>
-    body { font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; }
-    h2 { color: #42b883; }
-    code { background: #e8f5e9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-    hr { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
-    button { padding: 8px 20px; border: 1px solid #42b883; background: #fff; color: #42b883; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    button:hover { background: #42b883; color: #fff; }
-  </style>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0" />
+        <title>Da 框架 — 过渡动画示例</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                max-width: 640px;
+                margin: 40px auto;
+                padding: 0 20px;
+            }
+            h2 {
+                color: #42b883;
+            }
+            code {
+                background: #e8f5e9;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 13px;
+            }
+            button {
+                padding: 8px 20px;
+                border: 1px solid #42b883;
+                background: #fff;
+                color: #42b883;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            button:hover {
+                background: #42b883;
+                color: #fff;
+            }
+            .box {
+                padding: 20px;
+                border-radius: 8px;
+                background: #42b883;
+                color: #fff;
+                text-align: center;
+                font-size: 16px;
+                margin-top: 8px;
+            }
+            .box.orange {
+                background: #e67e22;
+            }
+            .box.purple {
+                background: #9b59b6;
+            }
+            .card-demo {
+                border: 2px solid #42b883;
+                border-radius: 12px;
+                padding: 16px;
+                margin-top: 8px;
+                min-height: 60px;
+            }
 
-  <h2>🎬 过渡动画</h2>
+            /* fade */
+            .fade-enter-active,
+            .fade-leave-active {
+                transition: opacity 0.5s ease;
+            }
+            .fade-enter-from,
+            .fade-leave-to {
+                opacity: 0;
+            }
+            .fade-enter-to,
+            .fade-leave-from {
+                opacity: 1;
+            }
 
-  <!-- ===== 渐入渐出 ===== -->
-  <h3>🌫️ 渐入渐出（fade）</h3>
-  <style>
-    .fade-enter-active, .fade-leave-active {
-      transition: opacity 0.5s ease;
-    }
-    .fade-enter-from, .fade-leave-to {
-      opacity: 0;
-    }
-    .fade-enter-to, .fade-leave-from {
-      opacity: 1;
-    }
-    .box {
-      padding: 20px;
-      border-radius: 8px;
-      background: #42b883;
-      color: #fff;
-      text-align: center;
-      font-size: 16px;
-      margin-top: 8px;
-    }
-    .box.orange { background: #e67e22; }
-    .box.purple { background: #9b59b6; }
-  </style>
+            /* slide */
+            .slide-enter-active,
+            .slide-leave-active {
+                transition: all 0.4s ease;
+                overflow: hidden;
+            }
+            .slide-enter-from,
+            .slide-leave-to {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            .slide-enter-to,
+            .slide-leave-from {
+                opacity: 1;
+                transform: translateX(0);
+            }
 
-  <da-transition :show="showFade" name="fade">
-    <div class="box">✨ 渐入渐出效果</div>
-  </da-transition>
-  <p><button @click="showFade = !showFade">{{ showFade ? '隐藏' : '显示' }}</button></p>
+            /* scale */
+            .scale-enter-active,
+            .scale-leave-active {
+                transition: all 0.35s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            }
+            .scale-enter-from,
+            .scale-leave-to {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            .scale-enter-to,
+            .scale-leave-from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            .scale-leave-active {
+                transition: all 0.25s ease-in;
+            }
 
-  <hr />
+            /* combine（out-in） */
+            .combine-enter-active,
+            .combine-leave-active {
+                transition: all 0.4s ease;
+            }
+            .combine-enter-from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            .combine-leave-to {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        </style>
+    </head>
+    <body>
+        <h2>🎬 过渡动画</h2>
 
-  <!-- ===== 滑动 ===== -->
-  <h3>📐 滑动（slide）</h3>
-  <style>
-    .slide-enter-active, .slide-leave-active {
-      transition: all 0.4s ease;
-      overflow: hidden;
-    }
-    .slide-enter-from, .slide-leave-to {
-      opacity: 0;
-      transform: translateX(30px);
-    }
-    .slide-enter-to, .slide-leave-from {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  </style>
+        <div id="app">
+            <!-- ===== fade ===== -->
+            <h3>🌫️ 渐入渐出（fade）</h3>
+            <da-transition :show="showAttr(showFade)" name="fade">
+                <div class="box">✨ 渐入渐出效果</div>
+            </da-transition>
+            <p><button @click="showFade = !showFade">{{ showFade ? '隐藏' : '显示' }}</button></p>
 
-  <da-transition :show="showSlide" name="slide">
-    <div class="box orange">➡️ 从右侧滑入</div>
-  </da-transition>
-  <p><button @click="showSlide = !showSlide">{{ showSlide ? '隐藏' : '显示' }}</button></p>
+            <!-- ===== slide ===== -->
+            <h3>📐 滑动（slide）</h3>
+            <da-transition :show="showAttr(showSlide)" name="slide">
+                <div class="box orange">➡️ 从右侧滑入</div>
+            </da-transition>
+            <p><button @click="showSlide = !showSlide">{{ showSlide ? '隐藏' : '显示' }}</button></p>
 
-  <hr />
+            <!-- ===== scale ===== -->
+            <h3>🔍 缩放（scale）</h3>
+            <da-transition :show="showAttr(showScale)" name="scale">
+                <div class="box purple">🌀 弹性缩放</div>
+            </da-transition>
+            <p><button @click="showScale = !showScale">{{ showScale ? '隐藏' : '显示' }}</button></p>
 
-  <!-- ===== 缩放 ===== -->
-  <h3>🔍 缩放（scale）</h3>
-  <style>
-    .scale-enter-active, .scale-leave-active {
-      transition: all 0.35s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    }
-    .scale-enter-from, .scale-leave-to {
-      opacity: 0;
-      transform: scale(0.5);
-    }
-    .scale-enter-to, .scale-leave-from {
-      opacity: 1;
-      transform: scale(1);
-    }
-    .scale-leave-active {
-      transition: all 0.25s ease-in;
-    }
-  </style>
+            <!-- ===== out-in 卡片切换 ===== -->
+            <h3>🔄 out-in 模式</h3>
+            <da-transition :show="showAttr(showCard)" name="combine" mode="out-in">
+                <div class="card-demo" da-html="cardHTML"></div>
+            </da-transition>
+            <p>
+                <button @click="switchCard">切换卡片</button>
+                <span style="font-size: 13px; color: #999; margin-left: 8px">旧内容离开后才进入新内容</span>
+            </p>
+        </div>
 
-  <da-transition :show="showScale" name="scale">
-    <div class="box purple">🌀 弹性缩放</div>
-  </da-transition>
-  <p><button @click="showScale = !showScale">{{ showScale ? '隐藏' : '显示' }}</button></p>
+        <script type="module">
+            import { mount } from "../src/da.js";
 
-  <hr />
+            const cards = [
+                { title: "第一张卡片", desc: "这是卡片 A 的内容。" },
+                { title: "第二张卡片", desc: "这是卡片 B 的内容，切换时有交互动画。" },
+                { title: "第三张卡片", desc: "卡片 C：out-in 模式确保过渡平滑。" },
+            ];
 
-  <!-- ===== 组合动画 + out-in 模式 ===== -->
-  <h3>🔄 out-in 模式</h3>
-  <style>
-    .combine-enter-active, .combine-leave-active {
-      transition: all 0.4s ease;
-    }
-    .combine-enter-from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    .combine-leave-to {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    .card-demo {
-      border: 2px solid #42b883;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 8px;
-      min-height: 60px;
-    }
-  </style>
+            const renderCard = (card) => `<h4>${card.title}</h4><p style="color:#666;">${card.desc}</p>`;
 
-  <da-transition :show="showCard" name="combine" mode="out-in">
-    <div da-if="showCard" class="card-demo">
-      <h4>{{ cardTitle }}</h4>
-      <p style="color: #666;">{{ cardDesc }}</p>
-    </div>
-  </da-transition>
-  <p>
-    <button @click="switchCard">切换卡片</button>
-    <span style="font-size: 13px; color: #999; margin-left: 8px;">旧内容离开后才进入新内容</span>
-  </p>
+            mount("#app", {
+                showFade: true,
+                showSlide: false,
+                showScale: true,
+                showCard: true,
+                cardIndex: 0,
+                cardHTML: renderCard(cards[0]),
 
-  <hr />
+                // da-transition 通过 show 属性判断显隐，需传 'true' / 'false' 字符串
+                showAttr(v) {
+                    return v ? "true" : "false";
+                },
 
-  <!-- ===== 事件监听 ===== -->
-  <h3>📋 过渡事件</h3>
-  <da-transition :show="showEvents" name="fade" id="eventDemo">
-    <div class="box">点击按钮观察控制台事件</div>
-  </da-transition>
-  <p><button @click="showEvents = !showEvents">切换</button></p>
-
-  <script type="module">
-    import { Da } from '../src/da.js'
-
-    // 页面级数据状态
-    const state = Da.reactive({
-      showFade: true,
-      showSlide: false,
-      showScale: true,
-      showCard: true,
-      showEvents: true,
-      cardIndex: 0,
-    })
-
-    const cards = [
-      { title: '第一张卡片', desc: '这是卡片 A 的内容。' },
-      { title: '第二张卡片', desc: '这是卡片 B 的内容，切换时有交互动画。' },
-      { title: '第三张卡片', desc: '卡片 C：out-in 模式确保过渡平滑。' },
-    ]
-
-    // 将状态绑定到页面元素
-    function bindState(key, el, attr) {
-      Da.effect(() => {
-        const val = state[key]
-        if (attr === 'textContent') {
-          el.textContent = val
-        } else if (attr === 'innerHTML') {
-          el.innerHTML = val
-        } else if (attr === 'show') {
-          el.setAttribute('show', String(val))
-        }
-      })
-    }
-
-    // 连接 da-transition 元素
-    document.querySelectorAll('da-transition').forEach((el) => {
-      const id = el.id || ''
-      if (id === 'eventDemo') {
-        bindState('showEvents', el, 'show')
-        el.addEventListener('before-enter', (e) => console.log('[event] before-enter', e.detail))
-        el.addEventListener('enter', (e) => console.log('[event] enter', e.detail))
-        el.addEventListener('after-enter', (e) => console.log('[event] after-enter', e.detail))
-        el.addEventListener('before-leave', (e) => console.log('[event] before-leave', e.detail))
-        el.addEventListener('leave', (e) => console.log('[event] leave', e.detail))
-        el.addEventListener('after-leave', (e) => console.log('[event] after-leave', e.detail))
-        return
-      }
-      if (el.hasAttribute(':show')) return // 跳过使用 :show 语法的
-      // 按位置匹配
-    })
-
-    // 手动连接（简化版 — 直接 attribute 操作）
-    function connectTransition(selector, stateKey) {
-      const el = document.querySelector(selector)
-      if (!el) return
-      Da.effect(() => {
-        el.setAttribute('show', String(state[stateKey]))
-      })
-    }
-
-    connectTransition('da-transition:nth-child(3)', 'showFade')
-    connectTransition('da-transition:nth-child(8)', 'showSlide')
-    connectTransition('da-transition:nth-child(13)', 'showScale')
-
-    // 卡片切换
-    function switchCard() {
-      state.cardIndex = (state.cardIndex + 1) % cards.length
-    }
-
-    // 用 Card 的 content
-    const cardTrans = document.querySelectorAll('da-transition')[3]
-    if (cardTrans) {
-      Da.effect(() => {
-        cardTrans.setAttribute('show', String(state.showCard))
-      })
-      // 更新卡片内部 —— 用 da-if + 重新渲染
-      // 简化：每次切换重建 light DOM
-      Da.watch(() => state.cardIndex, (idx) => {
-        // da-transition 会重新读取 light DOM 内容
-        const card = cards[idx]
-        cardTrans.innerHTML = `<div class="card-demo">
-          <h4>${card.title}</h4>
-          <p style="color: #666;">${card.desc}</p>
-        </div>`
-        // show 切换触发过渡
-        state.showCard = false
-        setTimeout(() => { state.showCard = true }, 50)
-      })
-    }
-
-    // 暴露到全局给 onclick 用
-    window.state = state
-    window.switchCard = switchCard
-  </script>
-</body>
+                switchCard() {
+                    this.cardIndex = (this.cardIndex + 1) % cards.length;
+                    this.cardHTML = renderCard(cards[this.cardIndex]);
+                    // 先离开，等离开动画结束再进入（out-in）
+                    this.showCard = false;
+                    setTimeout(() => {
+                        this.showCard = true;
+                    }, 420);
+                },
+            });
+        </script>
+    </body>
 </html>

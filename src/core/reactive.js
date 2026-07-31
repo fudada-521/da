@@ -69,7 +69,12 @@ function trigger(target, key) {
   const effectsToRun = new Set(deps)
   effectsToRun.forEach((effect) => {
     if (effect !== activeEffect) {
-      effect()
+      // 有 scheduler 的 effect（如 watch/computed）交给 scheduler 调度
+      if (effect._scheduler) {
+        effect._scheduler()
+      } else {
+        effect()
+      }
     }
   })
 }
@@ -79,6 +84,30 @@ function trigger(target, key) {
 // ============================================================
 
 const reactiveMap = new WeakMap()
+
+/** 迭代操作的依赖键（for...in / 数组整体变更） */
+const ITERATE_KEY = Symbol.for('iterate')
+
+/**
+ * 数组变更方法的拦截器
+ *
+ * Proxy 不会可靠拦截原生数组方法（如 push 只触发 index set、不触发 length），
+ * 这里统一包裹：在原生方法执行后显式触发 length 与 iterate 依赖，
+ * 保证 da-for 等监听整个数组的 effect 能被可靠唤醒。
+ */
+const arrayInstrumentations = {}
+const ARRAY_MUTATION_METHODS = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
+for (const method of ARRAY_MUTATION_METHODS) {
+  arrayInstrumentations[method] = function (...args) {
+    const raw = this._raw
+    const res = Reflect.apply(Array.prototype[method], raw, args)
+    if (raw) {
+      trigger(raw, 'length')
+      trigger(raw, ITERATE_KEY)
+    }
+    return res
+  }
+}
 
 /**
  * 创建对象的深度响应式代理
@@ -101,6 +130,11 @@ const reactiveHandler = {
   get(target, key, receiver) {
     if (key === '_isReactive') return true
     if (key === '_raw') return target
+
+    // 数组变更方法：返回包裹版本，保证触发 length/iterate 依赖
+    if (Array.isArray(target) && key in arrayInstrumentations) {
+      return arrayInstrumentations[key]
+    }
 
     const result = Reflect.get(target, key, receiver)
 

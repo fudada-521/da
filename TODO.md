@@ -79,61 +79,101 @@
   - [x] 作用域数据的响应式绑定（数据变化时插槽内容自动更新）
   - [x] 普通插槽与作用域插槽共存
   - [ ] ~~`v-for` 内部作用域插槽~~（需 v-for 作用域追踪支持，后续处理）
-- [ ] `v-on` 键盘修饰符
-  - [ ] `.enter` `.tab` `.delete` `.esc` `.space` `.up` `.down` `.left` `.right`
-  - [ ] 系统修饰键：`.ctrl` `.alt` `.shift` `.meta` `.exact`
-  - [ ] 鼠标修饰符：`.left` `.middle` `.right`
-- [ ] `v-on` 增强
-  - [ ] 支持 `$event` 在表达式中使用：`@click="handle($event, arg)"`
-  - [ ] 支持绑定多个事件：`@click="fn1; fn2"` 或 `@click="fn1(), fn2()"`
-- [ ] `v-model` 增强
-  - [ ] 组件上的 `v-model`（语法糖，默认绑定 `modelValue` + `@update:modelValue`）
-  - [ ] 多个 `v-model`：`v-model:title="pageTitle"`
+- [x] `v-on` 键盘修饰符
+  - [x] `.enter` `.tab` `.delete` `.esc` `.space` `.up` `.down` `.left` `.right`
+  - [x] 系统修饰键：`.ctrl` `.alt` `.shift` `.meta` `.exact`
+  - [x] 鼠标修饰符：`.left` `.middle` `.right`
+- [x] `v-on` 增强
+  - [x] 支持 `$event` 在表达式中使用：`@click="handle($event, arg)"`
+  - [x] 支持绑定多个事件：`@click="fn1(); fn2()"`
+- [x] `v-model` 增强
+  - [x] 组件上的 `v-model`（语法糖，默认绑定 `modelValue` + `@update:modelValue`）
+  - [x] 多个 `v-model`：`v-model:title="pageTitle"`
   - [ ] 自定义修饰符
+  - ⚠️ 内置 `da-input` 用 `value`/`update:value`，与 da-model 的 `modelValue` 约定不匹配 → `da-input da-model="x"` 失效，见第三期 P0-3
 
-### Phase 2-2：过渡与动画系统
+### Phase 2-2：过渡与动画系统  ✅ 基本完成（有缺陷）
 
-- [ ] `<DaTransition>` 组件（进入/离开过渡）
-  - [ ] CSS transition class 注入（`.da-enter-active` `.da-leave-active` 等）
-  - [ ] 利用 `Web Animation API` 或 CSS `@keyframes`
-  - [ ] 支持 `name` prop 自定义 class 前缀
-  - [ ] 支持 `mode="out-in"` / `mode="in-out"` 过渡模式
-  - [ ] 支持 `appear` 初始渲染过渡
-  - [ ] 过渡钩子（`@before-enter` `@enter` `@after-enter` `@before-leave` 等）
-- [ ] `<DaTransitionGroup>` 组件（列表过渡）
-  - [ ] 列表增删的过渡动画
-  - [ ] 移动过渡（FLIP 动画）
+- [x] `<DaTransition>` 组件（进入/离开过渡）
+  - [x] CSS transition class 注入（`.da-enter-active` `.da-leave-active` 等）
+  - [x] 支持 `name` prop 自定义 class 前缀
+  - [x] 支持 `mode="out-in"` / `mode="in-out"` 过渡模式
+  - [x] 支持 `appear` 初始渲染过渡
+  - [x] 过渡钩子（`@before-enter` `@enter` `@after-enter` `@before-leave` 等）
+- [x] `<DaTransitionGroup>` 组件（列表过渡）
+  - [x] 列表增删的过渡动画
+  - [x] 移动过渡（FLIP 动画）
+  - ⚠️ `da-for` 全量重建节点（非 keyed diff）→ 删除无 leave 动画、排序无 FLIP 移动，见第三期 P1-2
 - [ ] 指令级过渡：`v-enter` / `v-leave`（简化版本）
 
-### Phase 2-3：框架能力拓展
+### Phase 2-3：框架能力拓展  ✅ 大部分完成
 
-- [ ] 自定义指令 API
-  - [ ] `Da.register('my-dir', { mount, update, unmount })` 完整支持
-  - [ ] 指令参数与修饰符透传
-  - [ ] 指令内获取组件实例（`binding.instance`）
+- [x] 自定义指令 API
+  - [x] `Da.register('my-dir', { mount, update, unmount })` 完整支持
+  - [x] 指令参数与修饰符透传
+  - [x] 指令内获取组件实例（`binding.instance`）
 - [ ] 内置组件
-  - [ ] `<DaTeleport>` — 将内容渲染到指定 DOM 位置
-  - [ ] `<DaKeepAlive>` — 缓存动态组件状态
-- [ ] 模板编译增强
-  - [ ] 动态指令参数：`v-bind:[attrName]="value"`
-  - [ ] 动态事件参数：`v-on:[eventName]="handler"`
-  - [ ] JavaScript 表达式完整支持（三元、方法调用、计算）
-- [ ] `v-once` — 一次性插值（只渲染一次，不追踪变化）
-- [ ] `v-cloak` — 未编译完成时隐藏模板
-- [ ] `v-pre` — 跳过该元素及其子元素的编译
-- [ ] 全局 API
-  - [ ] `Da.nextTick()` — 下一 tick 回调
-  - [ ] `Da.version` — 版本号
-  - [ ] `Da.errorHandler` — 全局错误处理
+  - [ ] `<DaTeleport>` — 将内容渲染到指定 DOM 位置（未实现）
+  - [ ] `<DaKeepAlive>` — 缓存动态组件状态（未实现）
+- [x] 模板编译增强
+  - [x] 动态指令参数：`da-bind:[attrName]="value"`
+  - [x] 动态事件参数：`da-on:[eventName]="handler"`
+  - [x] JavaScript 表达式完整支持（三元、方法调用、计算）
+- [x] `v-once` — ⚠️ 空壳：仅打标记，编译器/更新循环未真正跳过，见第三期 P1-1
+- [x] `v-cloak` — 已实现
+- [x] `v-pre` — ⚠️ 空壳：未真正跳过子树编译，见第三期 P1-1
+- [x] 全局 API
+  - [x] `Da.nextTick()` — 已实现（⚠️ 语义是微任务，非"下一次 DOM 更新后"）
+  - [x] `Da.version` — 版本号
+  - [ ] `Da.errorHandler` — 全局错误处理（未实现）
 
-### Phase 2-4：示例与集成
+### Phase 2-4：示例与集成  ✅ 基本完成
 
-- [ ] 新增示例
-  - [ ] `examples/transition.html` — 过渡动画演示
-  - [ ] `examples/teleport.html` — Teleport 使用演示
-  - [ ] `examples/custom-directive.html` — 自定义指令演示
-  - [ ] `examples/scoped-slots.html` — 作用域插槽演示
+- [x] 新增示例
+  - [x] `examples/transition.html` — 过渡动画演示（已改 mount 方式）
+  - [x] `examples/custom-directive.html` — 自定义指令演示
+  - [x] `examples/scoped-slots.html` — 作用域插槽演示（含框架修复）
+  - [x] `examples/keyboard.html` — 键盘修饰符（含 @event 简写修复）
+  - [x] `examples/transition-group.html` — 列表过渡（已改 mount 方式）
+  - [x] `examples/counter.html` / `todo.html` — 已改为 mount 方式
+  - [ ] `examples/teleport.html` — 依赖 Teleport，未实现
 - [ ] 所有示例在新旧浏览器上的兼容性验证
+
+---
+
+## 第三期：框架加固（2026-07 体检新增）
+
+> 来源：框架全量体检。第一期/第二期已完成大部分功能，但存在若干正确性缺陷与"文档写了但用不了"的特性。
+
+### Phase 3-1：P0 — 正确性核心  ✅ 已完成
+
+- [x] **数组响应式**（`reactive.js`）
+  - [x] 拦截数组原生方法（`push`/`pop`/`shift`/`unshift`/`splice`/`sort`/`reverse`，Vue3 式 arrayInstrumentations），方法执行后显式触发 `length`/`iterate`
+  - [x] 已验证：push/pop/splice/sort 均可靠触发；transition-group 恢复原生方法调用
+- [x] **trigger 分发 `_scheduler`**（`reactive.js`）
+  - [x] `trigger` 优先调用 `effect._scheduler`
+  - [x] 已验证：`watch`/`computed` 恢复正常（test-reactive 中 watch/computed 断言全部通过）
+- [x] **da-model 与内置组件约定统一**
+  - [x] `da-input` 增加 `modelValue` prop + 派发 `update:modelValue`，`displayValue` getter 统一取值（modelValue 优先、value 兜底）
+  - [x] 已验证：`da-input da-model="x"`、`da-model:value="x"`、静态 `value="42"` 预填全部可用
+
+### Phase 3-2：P1 — 功能落地
+
+- [ ] `v-once` / `v-pre` 真正实现（编译器跳过子树 / 跳过更新）
+- [ ] `da-for` 改 keyed diff（最小 DOM 操作 + 让 `da-transition-group` 的 leave/FLIP 生效）
+- [ ] getter 纳入响应式（类字段计算属性化，替代 evaluateExpression 实例兜底）
+
+### Phase 3-3：P2 — 架构演进
+
+- [ ] 细粒度依赖追踪（替代 `_setupReactiveUpdate` 全量读 key）
+- [ ] 编译/求值缓存（缓存模板 parse 结果 + `evaluateExpression` 的 Function）
+- [ ] 测试体系（vitest + happy-dom，覆盖响应式/组件/指令）
+- [ ] 类型定义（`.d.ts`）
+- [ ] DevTools / 错误边界 / `nextTick` 语义修正
+
+### Phase 3-4：文档一致性
+
+- [ ] 修正 README 中"文档写了但用不了"的特性：`v-once`、`v-pre`、`da-input da-model`、`watch`/`computed`、FLIP 移动动画
 
 ### Phase 2-5：开发者体验（远期，粗略）
 

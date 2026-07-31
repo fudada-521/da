@@ -2,7 +2,8 @@
  * DaInput — 输入框组件
  *
  * Props:
- *   value       — 输入值（支持 da-model）
+ *   modelValue  — 输入值（da-model 默认绑定），优先于 value
+ *   value       — 输入值兼容别名（da-model:value / 静态属性预填）
  *   type        — 'text' | 'password' | 'email' | 'number'，默认 'text'
  *   placeholder — 占位文本
  *   disabled    — Boolean
@@ -10,10 +11,15 @@
  *   size        — 'small' | 'medium' | 'large'，默认 'medium'
  *   clearable   — Boolean（显示清空按钮）
  *
+ * 事件：输入时派发 `update:value` 和 `update:modelValue` 两个事件，
+ * 因此 `<da-input da-model="x">`（监听 update:modelValue）和
+ * `<da-input da-model:value="x">`（监听 update:value）都能工作。
+ *
  * 使用：
  *   <da-input da-model="name" placeholder="请输入姓名"></da-input>
  *   <da-input da-model.number="age" type="number"></da-input>
- *   <da-input :value="val" @update:modelValue="val = $event"></da-input>
+ *   <da-input da-model:value="msg"></da-input>
+ *   <da-input :model-value="val" @update:model-value="val = $event"></da-input>
  *
  * @format
  */
@@ -24,6 +30,7 @@ class DaInput extends Component {
     static tagName = "da-input";
 
     static props = {
+        modelValue: { type: String, default: "" },
         value: { type: String, default: "" },
         type: { type: String, default: "text" },
         placeholder: { type: String, default: "" },
@@ -32,6 +39,11 @@ class DaInput extends Component {
         size: { type: String, default: "medium" },
         clearable: { type: Boolean, default: false },
     };
+
+    /** 实际显示的输入值：modelValue 优先，value 兜底 */
+    get displayValue() {
+        return this.$props.modelValue || this.$props.value || "";
+    }
 
     static template = `
     <style>
@@ -105,7 +117,7 @@ class DaInput extends Component {
 
     <div class="wrapper">
       <input
-        :value="value"
+        :value="displayValue"
         :type="type"
         :placeholder="placeholder"
         :disabled="disabled"
@@ -117,7 +129,7 @@ class DaInput extends Component {
         @blur="$emit('blur', $event)"
       />
       <button
-        da-show="clearable && value.length > 0"
+        da-show="clearable && displayValue.length > 0"
         class="clear show"
         @click="onClear"
       >✕</button>
@@ -129,11 +141,13 @@ class DaInput extends Component {
         if (this.type === "number") {
             value = value === "" ? "" : parseFloat(value) || 0;
         }
-        // 调试日志：记录每次输入的值并派发 update:value
+        // 同时派发两个事件：update:modelValue（da-model 默认）与 update:value（da-model:value / 别名）
+        this.$emit("update:modelValue", value);
         this.$emit("update:value", value);
     }
 
     onClear() {
+        this.$emit("update:modelValue", "");
         this.$emit("update:value", "");
         // 聚焦输入框
         const input = this.$el.querySelector("input");
