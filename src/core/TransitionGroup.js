@@ -145,19 +145,25 @@ export class DaTransitionGroup extends HTMLElement {
       }
     }
 
-    // 1. 处理离开动画（在 DOM 更新前记录位置）
-    removed.forEach((el) => this._animateLeave(el))
+    // 区分「移动」与「新增/删除」：同一节点同时出现在 removed 与 added 视为移动。
+    // 移动不应触发 leave 动画（否则节点会被 _animateLeave 移除），只参与 FLIP。
+    const addedSet = new Set(added)
+    const moved = removed.filter((node) => addedSet.has(node))
+    const trulyRemoved = removed.filter((node) => !addedSet.has(node))
+    const trulyAdded = added.filter((node) => !moved.includes(node))
 
-    // 2. 处理移动动画（FLIP）
-    if (removed.length > 0 || added.length > 0) {
-      // 等 DOM 更新完成后计算 FLIP
+    // 1. 真正删除的节点 → leave 动画
+    trulyRemoved.forEach((el) => this._animateLeave(el))
+
+    // 2. 移动 / 增删后 → FLIP 移动动画
+    if (trulyRemoved.length > 0 || trulyAdded.length > 0 || moved.length > 0) {
       requestAnimationFrame(() => {
         this._animateMove()
       })
     }
 
-    // 3. 处理进入动画
-    added.forEach((el) => this._animateEnter(el))
+    // 3. 真正新增的节点 → enter 动画
+    trulyAdded.forEach((el) => this._animateEnter(el))
   }
 
   // ───── 进入过渡 ─────

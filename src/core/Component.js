@@ -307,6 +307,11 @@ export class Component extends HTMLElement {
         }
       }
     })
+
+    // 初始渲染文本插值（da-once 冻结后不再更新，必须在此渲染）
+    this._textBindings.forEach((b) => {
+      b.update()
+    })
   }
 
   // ───── 更新机制 ─────
@@ -341,6 +346,7 @@ export class Component extends HTMLElement {
     const { bindings = [] } = result
 
     bindings.forEach((b) => {
+      if (b.once) return // da-once：冻结，不再更新
       if (!b.directive) return
 
       // 解析动态参数（da-bind:[expr] / da-on:[expr]）

@@ -197,7 +197,8 @@
             import { mount } from "../src/da.js";
 
             const CHIP_NAMES = ["Vue", "React", "Svelte", "Angular", "Solid", "Qwik", "Preact"];
-            let idCounter = 0;
+            // 初始 items 已占用 id 1-4，从 4 开始续号，避免 key 冲突
+            let idCounter = 4;
 
             const api = mount("#app", {
                 items: [
@@ -216,11 +217,13 @@
                     this.newItem = "";
                 },
                 shuffle() {
-                    // 就地 Fisher-Yates，数组变更方法已被响应式拦截
-                    for (let i = this.items.length - 1; i > 0; i--) {
+                    // 打乱后一次性重赋值：单次数组变更 → 单次 keyed diff → FLIP 位移完整
+                    const arr = [...this.items];
+                    for (let i = arr.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
-                        [this.items[i], this.items[j]] = [this.items[j], this.items[i]];
+                        [arr[i], arr[j]] = [arr[j], arr[i]];
                     }
+                    this.items = arr;
                 },
                 addChip() {
                     this.chips.push(CHIP_NAMES[Math.floor(Math.random() * CHIP_NAMES.length)]);

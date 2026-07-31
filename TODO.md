@@ -157,11 +157,15 @@
   - [x] `da-input` 增加 `modelValue` prop + 派发 `update:modelValue`，`displayValue` getter 统一取值（modelValue 优先、value 兜底）
   - [x] 已验证：`da-input da-model="x"`、`da-model:value="x"`、静态 `value="42"` 预填全部可用
 
-### Phase 3-2：P1 — 功能落地
+### Phase 3-2：P1 — 功能落地  ✅ 基本完成
 
-- [ ] `v-once` / `v-pre` 真正实现（编译器跳过子树 / 跳过更新）
-- [ ] `da-for` 改 keyed diff（最小 DOM 操作 + 让 `da-transition-group` 的 leave/FLIP 生效）
-- [ ] getter 纳入响应式（类字段计算属性化，替代 evaluateExpression 实例兜底）
+- [x] `v-once` / `v-pre` 真正实现（编译器跳过子树 / 跳过更新，冻结绑定）
+- [x] `da-for` 改 keyed diff（按 key 复用/移动/回收节点）
+  - [x] 排序触发 FLIP 移动动画（transition-group 区分移动与增删）
+  - [x] 添加/删除只渲染变化的项（不再全量重建）
+  - ⚠️ 剩余：真正删除的节点仍无 leave 动画（da-for 同步移除，需 transition-group 接管渲染，见 P2）
+- [x] getter 表达式解析（`canLogin`/`completedCount` 等经实例兜底生效）
+  - ⚠️ 形式化依赖追踪（类字段计算属性化）并入 P2 细粒度依赖，暂不单独做
 
 ### Phase 3-3：P2 — 架构演进
 

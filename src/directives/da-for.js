@@ -122,68 +122,99 @@ function renderList(templateEl, anchor, instance = templateEl._daFor?.instance) 
     const source = evaluateExpression(sourceExpr, instance);
     if (!Array.isArray(source)) return;
 
-    // 清除旧节点
+    // 1. 收集旧节点：按 key 建索引
     let sibling = anchor.nextSibling;
-    const oldItems = [];
+    const oldNodes = [];
+    const keyToNode = new Map();
     while (sibling && sibling._daForItem !== undefined) {
-        oldItems.push(sibling);
+        oldNodes.push(sibling);
+        if (sibling._daForKeyValue !== undefined) {
+            keyToNode.set(sibling._daForKeyValue, sibling);
+        }
         sibling = sibling.nextSibling;
     }
-    oldItems.forEach((node) => {
-        if (node.parentNode) node.parentNode.removeChild(node);
-    });
 
-    // 渲染新列表
+    // 2. 遍历新列表：key 匹配则复用节点（支持重排），否则新建
     let insertPoint = anchor;
+    const reused = new Set();
+
     source.forEach((item, index) => {
-        const clone = templateEl.cloneNode(true);
-        delete clone._daFor;
-        delete clone._daForAnchor;
-
-        // 设置作用域数据
-        clone._daForItem = item;
-        clone._daForIndex = index;
-
-        // 创建作用域上下文
         const scope = { [itemName]: item };
         if (indexName) scope[indexName] = index;
+        const keyValue = keyExpr ? evaluateExpressionInScope(keyExpr, instance, scope) : undefined;
 
-        // 应用 key
-        if (keyExpr) {
-            const keyValue = evaluateExpressionInScope(keyExpr, instance, scope);
-            clone._daForKeyValue = keyValue;
+        let node = keyValue !== undefined ? keyToNode.get(keyValue) : undefined;
+
+        if (node) {
+            // 复用：更新实时作用域数据并重渲染（支持 FLIP 移动动画）
+            reused.add(node);
+            // 从索引中移除，避免重复 key 把同一节点复用两次
+            if (keyValue !== undefined) keyToNode.delete(keyValue);
+            node._daForItem = item;
+            node._daForIndex = index;
+            node._daForKeyValue = keyValue;
+            if (node._daForScopeTarget) {
+                node._daForScopeTarget[itemName] = item;
+                if (indexName) node._daForScopeTarget[indexName] = index;
+            }
+            if (node._daForCompileResult) {
+                node._daForCompileResult.update();
+            }
+        } else {
+            // 新建
+            node = templateEl.cloneNode(true);
+            delete node._daFor;
+            delete node._daForAnchor;
+            node._daForItem = item;
+            node._daForIndex = index;
+            if (keyValue !== undefined) node._daForKeyValue = keyValue;
+
+            // 实时作用域 target（复用更新时直接改它）
+            const scopeTarget = { ...scope };
+            node._daForScopeTarget = scopeTarget;
+            const scopedInstance = createScopedInstance(instance, scope, scopeTarget);
+            const result = compile(node, scopedInstance);
+            result.mount();
+            result.update(); // {{ }} 文本插值渲染
+            node._daForCompileResult = result;
         }
 
-        // 为克隆节点创建带作用域的实例，并编译其内部指令
-        const scopedInstance = createScopedInstance(instance, scope);
-        const result = compile(clone, scopedInstance);
-        result.mount();
-        result.update(); // {{ }} 文本插值渲染
-        clone._daForCompileResult = result;
-
-        // 在 insertPoint 之后插入，保证列表顺序正确
-        parent.insertBefore(clone, insertPoint.nextSibling);
-        insertPoint = clone;
+        // 3. 保证节点顺序正确（移动节点会触发 transition-group 的 FLIP）
+        if (insertPoint.nextSibling !== node) {
+            parent.insertBefore(node, insertPoint.nextSibling);
+        }
+        insertPoint = node;
     });
+
+    // 4. 移除未复用的旧节点（key 已不存在）
+    for (const node of oldNodes) {
+        if (reused.has(node)) continue;
+        if (node._daForCompileResult) {
+            try { node._daForCompileResult.unmount(); } catch (e) {}
+        }
+        if (node.parentNode) node.parentNode.removeChild(node);
+    }
 }
 
-function createScopedInstance(parentInstance, scope) {
+function createScopedInstance(parentInstance, scope, scopeTarget) {
+    // scopeTarget 为实时作用域对象（复用节点更新 item 时直接改它）
+    const target = scopeTarget || { ...scope };
     const scopeData = new Proxy(
-        { ...scope },
+        target,
         {
-            get(target, key) {
-                if (key in target) return target[key];
+            get(t, key) {
+                if (key in t) return t[key];
                 if (parentInstance && parentInstance.$data && key in parentInstance.$data) {
                     return parentInstance.$data[key];
                 }
                 return undefined;
             },
-            set(target, key, value) {
-                target[key] = value;
+            set(t, key, value) {
+                t[key] = value;
                 return true;
             },
-            has(target, key) {
-                return key in target || (parentInstance && parentInstance.$data && key in parentInstance.$data);
+            has(t, key) {
+                return key in t || (parentInstance && parentInstance.$data && key in parentInstance.$data);
             },
         },
     );
@@ -195,18 +226,18 @@ function createScopedInstance(parentInstance, scope) {
             $slots: parentInstance?.$slots || {},
         },
         {
-            get(target, key) {
-                if (key in scope) return scope[key];
+            get(t, key) {
                 if (key in target) return target[key];
+                if (key in t) return t[key];
                 if (parentInstance && parentInstance.$data && key in parentInstance.$data) {
                     return parentInstance.$data[key];
                 }
                 return undefined;
             },
-            has(target, key) {
+            has(t, key) {
                 return (
-                    key in scope ||
                     key in target ||
+                    key in t ||
                     (parentInstance && parentInstance.$data && key in parentInstance.$data)
                 );
             },

@@ -76,10 +76,15 @@ export function compile(templateRoot, instance) {
                     console.error("[Da compile] directive mount error:", e);
                 }
             });
+            // 初始渲染文本插值（da-once 冻结后不再更新，必须在此渲染）
+            textBindings.forEach((b) => {
+                b.update();
+            });
         },
         update() {
-            // 更新指令绑定（da-on 的事件处理表达式不参与求值）
+            // 更新指令绑定（da-once 的绑定冻结，跳过）
             bindings.forEach((b) => {
+                if (b.once) return;
                 if (b.directive && isFunction(b.directive.update)) {
                     if (b.name !== 'on') {
                         const newValue = evaluateExpression(b.expression, instance);
@@ -88,8 +93,9 @@ export function compile(templateRoot, instance) {
                     b.directive.update(b.el, b.binding);
                 }
             });
-            // 更新文本插值 {{ }}
+            // 更新文本插值 {{ }}（da-once 的文本冻结，跳过）
             textBindings.forEach((b) => {
+                if (b.once) return;
                 b.update();
             });
         },
@@ -107,7 +113,7 @@ export function compile(templateRoot, instance) {
 // DOM 遍历
 // ============================================================
 
-function traverseNodes(node, bindings, textBindings, styleContents, slotInfos, instance) {
+function traverseNodes(node, bindings, textBindings, styleContents, slotInfos, instance, once = false) {
     if (!node || !node.childNodes) return;
 
     if (node.tagName === "STYLE") {
@@ -118,13 +124,21 @@ function traverseNodes(node, bindings, textBindings, styleContents, slotInfos, i
         const child = node.childNodes[i];
 
         if (child.nodeType === Node.ELEMENT_NODE) {
+            // da-pre：跳过该元素及其子树编译，原样输出（含 {{ }} 原始文本）
+            if (child.hasAttribute && child.hasAttribute("da-pre")) {
+                continue;
+            }
+
+            // da-once：冻结该元素及其子树，只渲染一次
+            const isOnce = once || (child.hasAttribute && child.hasAttribute("da-once"));
+
             // 检测 <slot> 元素，提取作用域属性
             if (child.tagName === "SLOT") {
                 collectSlotInfo(child, slotInfos);
             }
 
             // 处理指令
-            processElement(child, bindings, instance);
+            processElement(child, bindings, instance, isOnce);
 
             // da-for / da-if 等结构性指令自己管理子树，不在此处递归
             if (child.hasAttribute && child.hasAttribute("da-for")) {
@@ -132,9 +146,9 @@ function traverseNodes(node, bindings, textBindings, styleContents, slotInfos, i
             }
 
             // 递归子节点
-            traverseNodes(child, bindings, textBindings, styleContents, slotInfos, instance);
+            traverseNodes(child, bindings, textBindings, styleContents, slotInfos, instance, isOnce);
         } else if (child.nodeType === Node.TEXT_NODE) {
-            processTextNode(child, textBindings, instance);
+            processTextNode(child, textBindings, instance, once);
         }
     }
 }
@@ -169,7 +183,7 @@ function collectSlotInfo(slotEl, slotInfos) {
 // 文本插值处理
 // ============================================================
 
-function processTextNode(textNode, textBindings, instance) {
+function processTextNode(textNode, textBindings, instance, once = false) {
     const text = textNode.textContent;
     if (!interpolationRE.test(text)) {
         interpolationRE.lastIndex = 0;
@@ -202,6 +216,7 @@ function processTextNode(textNode, textBindings, instance) {
         expressions,
         template: result,
         type: "text",
+        once, // da-once 子树内的文本插值只渲染一次
         update() {
             let str = this.template;
             for (let i = 0; i < this.expressions.length; i++) {
@@ -219,7 +234,7 @@ function processTextNode(textNode, textBindings, instance) {
 // 元素处理
 // ============================================================
 
-function processElement(el, bindings, instance) {
+function processElement(el, bindings, instance, once = false) {
     const attrs = Array.from(el.attributes || []);
     const directives = [];
 
@@ -264,16 +279,16 @@ function processElement(el, bindings, instance) {
     const elseDir = directives.find((d) => d.name === "else");
 
     if (ifDir) {
-        bindings.push(createBinding(el, ifDir, instance));
+        bindings.push(createBinding(el, ifDir, instance, once));
     } else if (elseIfDir) {
-        bindings.push(createBinding(el, elseIfDir, instance));
+        bindings.push(createBinding(el, elseIfDir, instance, once));
     } else if (elseDir) {
-        bindings.push(createBinding(el, elseDir, instance));
+        bindings.push(createBinding(el, elseDir, instance, once));
     }
 
     directives.forEach((dir) => {
         if (["if", "else-if", "else"].includes(dir.name)) return;
-        bindings.push(createBinding(el, dir, instance));
+        bindings.push(createBinding(el, dir, instance, once));
     });
 }
 
@@ -318,7 +333,7 @@ function parseDirective(attrName, attrValue) {
 // 指令绑定创建
 // ============================================================
 
-function createBinding(el, dirInfo, instance) {
+function createBinding(el, dirInfo, instance, once = false) {
     const { name, expression, arg, modifiers } = dirInfo;
 
     let value;
@@ -351,6 +366,7 @@ function createBinding(el, dirInfo, instance) {
         expression,
         directive: null,
         binding,
+        once, // da-once 子树内的指令绑定只渲染一次，不再更新
     };
 }
 
@@ -416,11 +432,15 @@ export function compileSlotTemplate(html, slotPropNames, instance) {
 // ============================================================
 
 export function updateTextBindings(textBindings) {
-    textBindings.forEach((b) => b.update());
+    textBindings.forEach((b) => {
+        if (b.once) return; // da-once 冻结
+        b.update();
+    });
 }
 
 export function updateDirectiveBindings(bindings, instance) {
     bindings.forEach((b) => {
+        if (b.once) return; // da-once 冻结
         if (b.directive && isFunction(b.directive.update)) {
             const newValue = evaluateExpression(b.expression, instance);
             b.binding.oldValue = b.binding.value;
