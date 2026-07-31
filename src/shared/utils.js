@@ -101,26 +101,33 @@ export function camelCase(str) {
 
 /**
  * 在组件上下文中求值表达式
- * 作用域优先级：$data > $props > $slots
+ * 作用域优先级：$slotScope（作用域插槽数据） > $data > $props > $slots > 组件实例
+ *
+ * - $slotScope：作用域插槽内容编译时注入的 slot props（如 { user, isAdmin }）
+ * - 组件实例兜底：让 getter（如 currentUser）也能在表达式中解析
  */
 export function evaluateExpression(expr, instance) {
   if (!expr) return undefined
   try {
-    const fn = new Function('$data', '$props', '$slots', `
+    const scope = instance && instance.$slotScope
+    const fn = new Function('$data', '$props', '$slots', '$scope', '$self', `
       var ctx = new Proxy($data, {
         get(target, key) {
+          if ($scope && key in $scope) return $scope[key];
           if (key in target) return target[key];
           if (key in $props) return $props[key];
           if (key in $slots) return $slots[key];
+          if ($self && key in $self) return $self[key];
           return undefined;
         },
         has(target, key) {
-          return key in target || key in $props || key in $slots;
+          if ($scope && key in $scope) return true;
+          return key in target || key in $props || key in $slots || ($self && key in $self);
         }
       });
       with(ctx) { return (${expr}) }
     `)
-    return fn(instance.$data, instance.$props, instance.$slots)
+    return fn(instance.$data, instance.$props, instance.$slots, scope, instance)
   } catch (e) {
     return undefined
   }

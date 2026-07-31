@@ -404,7 +404,8 @@ export class Component extends HTMLElement {
     Array.from(slotEl.attributes || []).forEach((attr) => {
       const match = attr.name.match(/^:(.+)/)
       if (match) {
-        props[match[1]] = attr.value.trim()
+        // 属性名归一为 camelCase，与 da-slot 解构名（如 { isAdmin }）保持一致
+        props[camelCase(match[1])] = attr.value.trim()
       }
     })
     return props
@@ -506,8 +507,8 @@ export class Component extends HTMLElement {
     const props = slotProps
     const { templateHTML, propNames } = scopedTemplate
 
-    // 编译模板为渲染函数
-    const renderFn = compileSlotTemplate(templateHTML, propNames)
+    // 编译模板为渲染函数（缓存模板 DOM，避免每次渲染重复解析）
+    const renderFn = compileSlotTemplate(templateHTML, propNames, this)
 
     // 创建容器元素替换 <slot>
     const container = document.createElement('span')
@@ -521,6 +522,7 @@ export class Component extends HTMLElement {
       container,
       propExprs: props,   // { item: '表达式', index: '索引' }
       propNames,
+      compiled: null,     // 当前编译结果（用于清理指令绑定）
     }
 
     this._scopedSlotRenderers.push(renderer)
@@ -533,18 +535,30 @@ export class Component extends HTMLElement {
   _renderScopedSlotContent(renderer) {
     const { renderFn, container, propExprs } = renderer
 
+    // 清理上一次的指令绑定，避免事件泄漏 / 重复挂载
+    if (renderer.compiled) {
+      try { renderer.compiled.unmount() } catch (e) {}
+      renderer.compiled = null
+    }
+
     // 计算 slot props
     const slotData = {}
     for (const [propName, expression] of Object.entries(propExprs)) {
       slotData[propName] = evaluateExpression(expression, this)
     }
 
-    // 渲染
-    const fragment = renderFn(slotData)
+    // 渲染 + 编译
+    const { fragment, compiled } = renderFn(slotData)
 
-    // 替换容器内容
+    // 先挂载到容器再挂载指令（da-if 等结构性指令依赖 parentNode）
     container.innerHTML = ''
     container.appendChild(fragment)
+
+    if (compiled) {
+      compiled.mount()
+      compiled.update() // 渲染初始 {{ }} 文本插值
+    }
+    renderer.compiled = compiled
   }
 
   /** 更新所有作用域插槽（在响应式数据变化时调用） */
@@ -590,6 +604,9 @@ export class Component extends HTMLElement {
   /** 清理作用域插槽 */
   _cleanupScopedSlots() {
     this._scopedSlotRenderers.forEach((r) => {
+      if (r.compiled) {
+        try { r.compiled.unmount() } catch (e) {}
+      }
       if (r.container && r.container.parentNode) {
         r.container.parentNode.removeChild(r.container)
       }

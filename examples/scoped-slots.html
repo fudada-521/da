@@ -1,60 +1,115 @@
-<!DOCTYPE html>
+<!-- @format -->
+
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Da 框架 — 作用域插槽示例</title>
-  <style>
-    body { font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; }
-    h2 { color: #42b883; }
-    code { background: #e8f5e9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-    hr { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
-  </style>
-</head>
-<body>
-  <h2>🧩 作用域插槽</h2>
-  <p>子组件用 <code>:prop="表达式"</code> 暴露数据，父组件用 <code>da-slot="{ prop }"</code> 接收。</p>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0" />
+        <title>Da 框架 — 作用域插槽示例</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                max-width: 640px;
+                margin: 40px auto;
+                padding: 0 20px;
+                background: #f8f9fa;
+                color: #333;
+            }
+            h2 {
+                color: #35495e;
+            }
+            code {
+                background: #e8f5e9;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 13px;
+            }
+            .section {
+                background: #fff;
+                border-radius: 12px;
+                padding: 20px;
+                margin: 16px 0;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            }
+            .section h3 {
+                margin: 0 0 12px;
+                font-size: 14px;
+                color: #999;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .tip {
+                border-left: 4px solid #42b883;
+                border-radius: 8px;
+                background: #fff;
+                padding: 12px 16px;
+                margin: 16px 0;
+                font-size: 13px;
+                color: #666;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            }
+        </style>
+    </head>
+    <body>
+        <h2>🧩 作用域插槽</h2>
+        <p style="color: #666; margin-bottom: 24px">
+            子组件用 <code>:prop="表达式"</code> 暴露数据，父组件用插槽内容接收并决定如何渲染。插槽内容支持全部指令（<code>{{ }}</code>、<code>da-if</code>、<code>:class</code> 等）。
+        </p>
 
-  <h3>📌 方式一：<code>da-slot:default="{ user }"</code></h3>
-  <da-user-card id="card1">
-    <template da-slot:default="{ user, isAdmin }">
-      <p><strong>{{ user.name }}</strong> · {{ user.role }}</p>
-      <p style="font-size:13px;color:#666;">📧 {{ user.email }}</p>
-      <p da-if="isAdmin" style="color:#e74c3c;font-size:12px;">🔑 管理员</p>
-    </template>
-  </da-user-card>
+        <div class="section">
+            <h3>① 默认作用域插槽 · da-slot:default</h3>
+            <da-user-card id="card1">
+                <template da-slot:default="{ user, isAdmin }">
+                    <p><strong>{{ user.name }}</strong> · {{ user.role }}</p>
+                    <p style="font-size: 13px; color: #666">📧 {{ user.email }}</p>
+                    <p
+                        da-if="isAdmin"
+                        style="color: #e74c3c; font-size: 12px">
+                        🔑 管理员
+                    </p>
+                </template>
+            </da-user-card>
+        </div>
 
-  <h3>📌 方式二：<code>#default="{ user }"</code> 简写</h3>
-  <da-user-card id="card2">
-    <template #default="{ user }">
-      <p><strong>{{ user.name }}</strong></p>
-      <p style="font-size:13px;color:#666;">📧 {{ user.email }}</p>
-    </template>
-  </da-user-card>
+        <div class="section">
+            <h3>② 简写 · #default</h3>
+            <da-user-card id="card2">
+                <template #default="{ user }">
+                    <p><strong>{{ user.name }}</strong></p>
+                    <p style="font-size: 13px; color: #666">📧 {{ user.email }}</p>
+                </template>
+            </da-user-card>
+        </div>
 
-  <hr />
+        <div class="section">
+            <h3>③ 命名作用域插槽 · da-slot:content</h3>
+            <da-panel>
+                <span slot="title">📊 数据面板</span>
+                <template da-slot:content="{ data, meta }">
+                    <p>数据值：<strong>{{ data }}</strong></p>
+                    <p>更新时间：{{ meta.updated }}</p>
+                    <p>
+                        状态：
+                        <span :style="{ color: meta.status === 'ok' ? '#42b883' : '#e74c3c' }"
+                            >{{ meta.status }}</span
+                        >
+                    </p>
+                </template>
+                <span slot="footer">Powered by Da</span>
+            </da-panel>
+        </div>
 
-  <h3>🏗️ 命名作用域插槽</h3>
-  <da-panel>
-    <span slot="title">📊 数据面板</span>
-    <template da-slot:content="{ data, meta }">
-      <p>数据值：<strong>{{ data }}</strong></p>
-      <p>更新时间：{{ meta.updated }}</p>
-      <p>状态：<span :style="{ color: meta.status === 'ok' ? '#42b883' : '#e74c3c' }">{{ meta.status }}</span></p>
-    </template>
-    <span slot="footer">Powered by Da</span>
-  </da-panel>
+        <div class="tip">
+            💡 点 UserCard 卡片底部的「切换用户」按钮，插槽内容会随子组件数据自动更新——<code>da-if="isAdmin"</code> 也会跟着生效。
+        </div>
 
-  <hr />
-
-  <h3>🔄 响应式更新</h3>
-  <p>点「切换用户」时插槽内容自动更新。</p>
-
-  <script type="module">
-    import UserCard from './components/UserCard.js'
-    import DataPanel from './components/DataPanel.js'
-    UserCard.define()
-    DataPanel.define()
-  </script>
-</body>
+        <script type="module">
+            import UserCard from "./components/UserCard.js";
+            import DataPanel from "./components/DataPanel.js";
+            UserCard.define();
+            DataPanel.define();
+        </script>
+    </body>
 </html>

@@ -373,99 +373,36 @@ export function resolveBindingArg(binding, instance) {
  * 将 <template da-slot:name="{ item }">{{ item.name }}</template>
  * 编译为可接收 slotData 并返回渲染后 DOM 的函数。
  *
+ * 复用主编译器 compile()，因此插槽内容支持全部能力：
+ * {{ }} 插值、da-* 指令、:attr / @event 简写、对象式 :class / :style。
+ * 表达式求值时 slotData 优先（通过 $slotScope 注入），组件数据兜底。
+ *
  * @param {string} html - 模板 HTML 字符串（<template> 内的内容）
  * @param {string[]} slotPropNames - 插槽暴露的 prop 名列表，如 ['item', 'index']
- * @returns {Function} render(slotData) → DocumentFragment
+ * @param {object} instance - 宿主组件实例（用于兜底解析组件数据 / 方法）
+ * @returns {Function} render(slotData) → { fragment, compiled }
  */
-export function compileSlotTemplate(html, slotPropNames) {
-    if (!html || !html.trim()) return () => document.createDocumentFragment();
-
-    // 每次调用时构建新的 DOM
-    return function renderSlot(slotData) {
-        const temp = document.createElement("template");
-        temp.innerHTML = html;
-        const content = temp.content;
-
-        // 遍历所有文本节点，替换插值表达式
-        const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null);
-        const textNodes = [];
-        while (walker.nextNode()) {
-            textNodes.push(walker.currentNode);
-        }
-
-        textNodes.forEach((textNode) => {
-            const text = textNode.textContent;
-            if (!interpolationRE.test(text)) {
-                interpolationRE.lastIndex = 0;
-                return;
-            }
-            interpolationRE.lastIndex = 0;
-
-            textNode.textContent = text.replace(interpolationRE, (_, expr) => {
-                const trimmed = expr.trim();
-                return evaluateWithScope(trimmed, slotData, slotPropNames);
-            });
-        });
-
-        // 处理 da-bind / :attr
-        processSlotBindings(content, slotData, slotPropNames);
-
-        return content;
-    };
-}
-
-/**
- * 在插槽作用域中求值表达式
- * 表达式中的变量优先匹配 slotData 的 prop，否则返回 undefined
- */
-function evaluateWithScope(expr, slotData, slotPropNames) {
-    try {
-        // 构建作用域变量列表
-        const scopeVars = {};
-        if (slotData && typeof slotData === "object") {
-            for (const key of slotPropNames) {
-                scopeVars[key] = slotData[key];
-            }
-        }
-
-        // 在作用域中求值
-        const keys = Object.keys(scopeVars);
-        const values = keys.map((k) => scopeVars[k]);
-        const fn = new Function(...keys, `return (${expr})`);
-        const result = fn(...values);
-        return result !== undefined && result !== null ? String(result) : "";
-    } catch {
-        return "";
+export function compileSlotTemplate(html, slotPropNames, instance) {
+    if (!html || !html.trim()) {
+        return () => ({ fragment: document.createDocumentFragment(), compiled: null });
     }
-}
 
-/**
- * 处理插槽模板中的 da-bind / :attr 指令
- */
-function processSlotBindings(root, slotData, slotPropNames) {
-    const elements = root.querySelectorAll("*");
-    elements.forEach((el) => {
-        if (!el.attributes) return;
-        const toRemove = [];
-        Array.from(el.attributes).forEach((attr) => {
-            const match = attr.name.match(/^:(.+)/);
-            if (match) {
-                const propName = match[1];
-                const expr = attr.value.trim();
-                const value = evaluateWithScope(expr, slotData, slotPropNames);
+    // 预解析模板 DOM，避免每次渲染重复解析 HTML 字符串
+    const temp = document.createElement("template");
+    temp.innerHTML = html;
 
-                if (propName === "class") {
-                    el.className = value;
-                } else if (propName === "style") {
-                    el.style.cssText = value;
-                } else {
-                    el.setAttribute(propName, value);
-                }
-                toRemove.push(attr.name);
-            }
-        });
-        toRemove.forEach((name) => el.removeAttribute(name));
-    });
+    return function renderSlot(slotData) {
+        // 克隆出全新的 DOM
+        const fragment = temp.content.cloneNode(true);
+
+        // 插槽作用域：slotData 优先，组件自身数据兜底
+        const slotInstance = Object.create(instance);
+        slotInstance.$slotScope = slotData;
+
+        // 复用主编译器编译并绑定指令
+        const compiled = compile(fragment, slotInstance);
+        return { fragment, compiled };
+    };
 }
 
 // ============================================================
