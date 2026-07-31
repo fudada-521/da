@@ -126,6 +126,11 @@ function traverseNodes(node, bindings, textBindings, styleContents, slotInfos, i
             // 处理指令
             processElement(child, bindings, instance);
 
+            // da-for / da-if 等结构性指令自己管理子树，不在此处递归
+            if (child.hasAttribute && child.hasAttribute("da-for")) {
+                continue;
+            }
+
             // 递归子节点
             traverseNodes(child, bindings, textBindings, styleContents, slotInfos, instance);
         } else if (child.nodeType === Node.TEXT_NODE) {
@@ -311,7 +316,8 @@ function createBinding(el, dirInfo, instance) {
     const { name, expression, arg, modifiers } = dirInfo;
 
     let value;
-    if (expression) {
+    // da-on 指令的表达式是事件处理代码，不应在绑定时求值
+    if (expression && name !== 'on') {
         value = evaluateExpression(expression, instance);
     }
 

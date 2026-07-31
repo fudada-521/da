@@ -124,11 +124,16 @@ function unbindEvent(el, binding) {
 function createHandler(expression, instance, modifiers) {
   if (!expression) return null
 
-  // 函数名（纯标识符）：从组件实例上查找
+  // 函数名（纯标识符）：从组件实例或其 $data 上查找
   const isSimpleFnName = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(expression)
-  if (instance && isSimpleFnName && typeof instance[expression] === 'function') {
-    const fn = instance[expression].bind(instance)
-    return buildWrapper(fn, modifiers)
+  if (instance && isSimpleFnName) {
+    let fn = null
+    if (typeof instance[expression] === 'function') {
+      fn = instance[expression].bind(instance)
+    } else if (instance.$data && typeof instance.$data[expression] === 'function') {
+      fn = instance.$data[expression].bind(instance.$data)
+    }
+    if (fn) return buildWrapper(fn, modifiers)
   }
 
   // 内联语句
