@@ -241,7 +241,7 @@ register("my-directive", {
 
 | 示例                                              | 说明                     | 涉及特性                                    |
 | ------------------------------------------------- | ------------------------ | ------------------------------------------- |
-| [计数器](examples/counter.html)                   | 简单的加减计数器         | `da-on` `da-bind` `da-show` `props`         |
+| [计数器](examples/counter.html)                   | 简单的加减计数器         | `mount` `da-on` `da-bind` `da-show` `<da-button>` |
 | [待办列表](examples/todo.html)                    | 增删待办、标记完成       | `da-for` `da-model` `da-if` `:class`        |
 | [插槽](examples/slots.html)                       | 卡片布局组件             | 默认插槽、命名插槽                          |
 | [作用域插槽](examples/scoped-slots.html)           | 子组件传递数据到插槽内容 | `da-slot` `#` 简写                          |

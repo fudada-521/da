@@ -8,16 +8,66 @@
             name="viewport"
             content="width=device-width, initial-scale=1.0" />
         <title>Da 框架 — 计数器示例</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                text-align: center;
+            }
+            .counter {
+                display: inline-block;
+                padding: 20px;
+                border: 2px solid #42b883;
+                border-radius: 12px;
+            }
+            .value {
+                font-size: 48px;
+                font-weight: bold;
+                color: #42b883;
+                margin: 16px 0;
+            }
+            .even {
+                color: #35495e;
+                font-size: 14px;
+                margin-top: 8px;
+            }
+            .odd {
+                color: #999;
+                font-size: 14px;
+                margin-top: 8px;
+            }
+        </style>
     </head>
     <body>
         <h2>🔢 计数器</h2>
 
-        <da-counter :title="'我的计数器'"></da-counter>
-        <da-counter :title="'我的计数器'"></da-counter>
+        <!-- 无需自定义组件，mount 即可让任意 HTML 使用指令 -->
+        <div id="counter" class="counter">
+            <p class="value">{{ count }}</p>
+            <da-button @click="decrement">−</da-button>
+            <da-button @click="increment">+</da-button>
+            <da-button type="danger" @click="reset">重置</da-button>
+            <p :class="count % 2 === 0 ? 'even' : 'odd'">
+                当前数字是{{ count % 2 === 0 ? '偶数' : '奇数' }}
+            </p>
+            <p da-show="count > 5" style="color: red">⚠️ 超过 5 了！</p>
+        </div>
 
         <script type="module">
-            import Counter from "./components/Counter.js";
-            Counter.define();
+            import { mount } from "../src/da.js";
+            import "../src/components/Button.js";
+
+            mount("#counter", {
+                count: 0,
+                increment() {
+                    this.count++;
+                },
+                decrement() {
+                    this.count--;
+                },
+                reset() {
+                    this.count = 0;
+                },
+            });
         </script>
     </body>
 </html>
