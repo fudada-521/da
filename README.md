@@ -240,17 +240,18 @@ register("my-directive", {
 ## 示例
 
 | 示例                                              | 说明                     | 涉及特性                                    |
-| ------------------------------------------------- | ------------------------ | ------------------------------------------- |
-| [计数器](examples/counter.html)                   | 简单的加减计数器         | `mount` `da-on` `da-bind` `da-show` `<da-button>` |
-| [待办列表](examples/todo.html)                    | 增删待办、标记完成       | `da-for` `da-model` `da-if` `:class`        |
-| [插槽](examples/slots.html)                       | 卡片布局组件             | 默认插槽、命名插槽                          |
-| [作用域插槽](examples/scoped-slots.html)           | 子组件传递数据到插槽内容 | `da-slot` `#` 简写                          |
-| [过渡动画](examples/transition.html)               | 进入/离开过渡           | `<da-transition>` CSS 过渡动画              |
-| [列表过渡](examples/transition-group.html)          | 列表增删移动动画         | `<da-transition-group>` FLIP 动画           |
-| [组件 da-model](examples/component-model.html)      | 组件上使用 da-model      | `da-model` 组件双向绑定                     |
-| [事件修饰符](examples/keyboard.html)               | 键盘事件修饰符           | `@keyup.enter` 等修饰符                     |
-| [自定义指令](examples/custom-directive.html)        | 自定义指令注册和使用     | `Da.register()` mount/update/unmount         |
-| [UI 组件](examples/ui-components.html)              | 内置按钮和输入框组件     | `<da-button>` `<da-input>`                  |
+| -------------------------------------------------| ------------------------| -------------------------------------------|
+| [计数器](examples/counter.html)                    | 简单的加减计数器               | `mount` `da-on` `da-bind` `da-show` `<da-button>`|
+| [待办列表](examples/todo.html)                      | 增删待办、标记完成              | `da-for` `da-model` `da-if` `:class`    |
+| [插槽](examples/slots.html)                       | 卡片布局组件                 | 默认插槽、命名插槽                               |
+| [作用域插槽](examples/scoped-slots.html)             | 子组件传递数据到插槽内容           | `da-slot` `#` 简写                        |
+| [过渡动画](examples/transition.html)                | 进入/离开过渡                | `<da-transition>` CSS 过渡动画              |
+| [列表过渡](examples/transition-group.html)          | 列表增删移动动画               | `<da-transition-group>` FLIP 动画         |
+| [组件 da-model](examples/component-model.html)    | 组件上使用 da-model         | `da-model` 组件双向绑定                       |
+| [事件修饰符](examples/keyboard.html)                 | 键盘事件修饰符                | `@keyup.enter` 等修饰符                     |
+| [自定义指令](examples/custom-directive.html)         | 自定义指令注册和使用             | `Da.register()` mount/update/unmount    |
+| [UI 组件](examples/ui-components.html)            | 内置按钮和输入框组件             | `<da-button>` `<da-input>`              |
+| [细粒度追踪](examples/fine-grained.html)             | 字段级依赖隔离，自检断言           | P2-A 细粒度依赖追踪、`da-probe` 探针              |
 
 直接在浏览器中打开即可运行，无需任何构建工具。
 

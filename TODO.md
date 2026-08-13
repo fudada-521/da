@@ -177,10 +177,12 @@
 - [ ] 测试体系（vitest + happy-dom，覆盖响应式/组件/指令）
 - [ ] 类型定义（`.d.ts`）
 - [ ] DevTools / 错误边界 / `nextTick` 语义修正
+- [ ] 补漏（2026-08 审计发现）：`da-else-if`/`da-else` 注册缺失不可用、`<da-transition>` `appear` 初始过渡未生效、`da-transition-group` `moveClass` 属性名（实现为 `move-class`）、`da-input` 文档 `model` prop 不存在、"开箱即用"需显式 import 组件
 
-### Phase 3-4：文档一致性
+### Phase 3-4：文档一致性  ✅ 已完成
 
-- [ ] 修正 README 中"文档写了但用不了"的特性：`v-once`、`v-pre`、`da-input da-model`、`watch`/`computed`、FLIP 移动动画
+- [x] 修正 README 中"文档写了但用不了"的特性：`v-once`、`v-pre`、`da-input da-model`、`watch`/`computed`、FLIP 移动动画
+  - b142cd0 完成：register API 契约统一、README/guide/示例 import 修正、version 0.2.0
 
 ### Phase 2-5：开发者体验（远期，粗略）
 
