@@ -83,16 +83,7 @@ export function compile(templateRoot, instance) {
         },
         update() {
             // 更新指令绑定（da-once 的绑定冻结，跳过）
-            bindings.forEach((b) => {
-                if (b.once) return;
-                if (b.directive && isFunction(b.directive.update)) {
-                    if (b.name !== 'on') {
-                        const newValue = evaluateExpression(b.expression, instance);
-                        b.binding.value = newValue;
-                    }
-                    b.directive.update(b.el, b.binding);
-                }
-            });
+            bindings.forEach((b) => updateBinding(b, instance));
             // 更新文本插值 {{ }}（da-once 的文本冻结，跳过）
             textBindings.forEach((b) => {
                 if (b.once) return;
@@ -124,6 +115,12 @@ function traverseNodes(node, bindings, textBindings, styleContents, slotInfos, i
         const child = node.childNodes[i];
 
         if (child.nodeType === Node.ELEMENT_NODE) {
+            // 作用域插槽容器：内容已由插槽渲染器单独编译，跳过该子树，
+            // 避免用宿主实例编译出无 slotScope 的绑定（会错误地隐藏插槽内 da-if 等）
+            if (child._daSlotContainer) {
+                continue;
+            }
+
             // da-pre：跳过该元素及其子树编译，原样输出（含 {{ }} 原始文本）
             if (child.hasAttribute && child.hasAttribute("da-pre")) {
                 continue;
@@ -438,16 +435,41 @@ export function updateTextBindings(textBindings) {
     });
 }
 
+/**
+ * 更新单个指令绑定（细粒度 effect 与全量更新共用）
+ *
+ * - da-once 绑定冻结，跳过
+ * - 动态参数（da-bind:[expr] / da-on:[expr]）变化时先卸载再重新挂载
+ * - da-on 事件表达式不参与值求值
+ */
+export function updateBinding(b, instance) {
+    if (b.once || !b.directive) return
+
+    // 解析动态参数，变化时先卸载再重新挂载
+    const argChanged = resolveBindingArg(b.binding, instance)
+    if (argChanged && isFunction(b.directive.unmount)) {
+        try { b.directive.unmount(b.el) } catch (e) {}
+        try { b.directive.mount(b.el, b.binding) } catch (e) {}
+        return
+    }
+
+    if (!isFunction(b.directive.update)) return
+
+    // da-on 的事件处理表达式不参与值求值
+    if (b.name !== 'on') {
+        b.binding.oldValue = b.binding.value
+        b.binding.value = evaluateExpression(b.expression, instance)
+    }
+
+    try {
+        b.directive.update(b.el, b.binding)
+    } catch (e) {
+        console.error(`[Da] directive "${b.name}" update error:`, e)
+    }
+}
+
 export function updateDirectiveBindings(bindings, instance) {
-    bindings.forEach((b) => {
-        if (b.once) return; // da-once 冻结
-        if (b.directive && isFunction(b.directive.update)) {
-            const newValue = evaluateExpression(b.expression, instance);
-            b.binding.oldValue = b.binding.value;
-            b.binding.value = newValue;
-            b.directive.update(b.el, b.binding);
-        }
-    });
+    bindings.forEach((b) => updateBinding(b, instance))
 
     bindings.forEach((b) => {
         if (b.type === "text") {

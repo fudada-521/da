@@ -169,7 +169,10 @@
 
 ### Phase 3-3：P2 — 架构演进
 
-- [ ] 细粒度依赖追踪（替代 `_setupReactiveUpdate` 全量读 key）
+- [x] 细粒度依赖追踪（替代 `_setupReactiveUpdate` 全量读 key）
+  - 每绑定一个 effect（`src/core/bindingEffects.js` `createReactiveUpdater`），仅当其表达式读取的字段变化时更新自身
+  - getter 表达式自动获得依赖追踪；作用域插槽按自身读取字段触发
+  - `Da.unmount()` 停止全部绑定 effect；`stop()` 加固防"stop 后挂起 flush 重订阅"竞态
 - [ ] 编译/求值缓存（缓存模板 parse 结果 + `evaluateExpression` 的 Function）
 - [ ] 测试体系（vitest + happy-dom，覆盖响应式/组件/指令）
 - [ ] 类型定义（`.d.ts`）

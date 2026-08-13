@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da — 细粒度依赖追踪演示</title>
+  <style>
+    body { font-family: sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; }
+    h2 { color: #42b883; }
+    code { background: #e8f5e9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    button { margin: 4px 8px 4px 0; padding: 6px 14px; }
+    #result { background: #f5f5f5; padding: 12px; border-radius: 8px; font-size: 13px; white-space: pre; }
+    .pass { color: #2e7d32; }
+    .fail { color: #c62828; }
+  </style>
+</head>
+<body>
+  <h2>🔬 细粒度依赖追踪</h2>
+  <p>字段 <code>a</code> 与 <code>b</code> 各自独立绑定。修改任一字段，<strong>只有读取它的绑定</strong>会重新执行。</p>
+
+  <div id="app">
+    <p>
+      <code>da-probe="a"</code> 绑定：<span id="probeA" da-probe="a"></span>　
+      <code>da-probe="b"</code> 绑定：<span id="probeB" da-probe="b"></span>
+    </p>
+    <p>a = <b id="va">{{ a }}</b>　b = <b id="vb">{{ b }}</b></p>
+    <p>
+      <button id="btnA" @click="a++">a + 1</button>
+      <button id="btnB" @click="b++">b + 1</button>
+    </p>
+    <pre id="result">运行中…</pre>
+  </div>
+
+  <script type="module">
+    import { mount, register, nextTick } from '../src/da.js'
+
+    // 探针指令：每执行一次 update 就自增计数并写入 data-n 属性
+    register('probe', {
+      mount(el) { el._n = 0 },
+      update(el) { el._n++; el.setAttribute('data-n', String(el._n)) },
+    })
+
+    const state = mount('#app', { a: 0, b: 0 })
+    const probeA = document.getElementById('probeA')
+    const probeB = document.getElementById('probeB')
+    const va = document.getElementById('va')
+    const vb = document.getElementById('vb')
+
+    const n = (el) => el.getAttribute('data-n')
+
+    async function run() {
+      const results = []
+      const check = (name, cond, detail) => results.push([name, cond, detail])
+
+      // 初始：两个绑定各渲染一次（count = 1）
+      check('初始 a 绑定渲染 1 次', n(probeA) === '1', `n=${n(probeA)}`)
+      check('初始 b 绑定渲染 1 次', n(probeB) === '1', `n=${n(probeB)}`)
+
+      // 只改 a：a 绑定 +1，b 绑定必须不动（细粒度的核心断言）
+      state.a = 1
+      await nextTick()
+      check('改 a 后 a 绑定更新为 2', n(probeA) === '2', `n=${n(probeA)}`)
+      check('改 a 后 b 绑定仍为 1（隔离 ✓）', n(probeB) === '1', `n=${n(probeB)}`)
+      check('va 显示 1', va.textContent === '1', `va=${va.textContent}`)
+
+      // 只改 b：b 绑定 +1，a 绑定不动
+      state.b = 1
+      await nextTick()
+      check('改 b 后 b 绑定更新为 2', n(probeB) === '2', `n=${n(probeB)}`)
+      check('改 b 后 a 绑定仍为 2（隔离 ✓）', n(probeA) === '2', `n=${n(probeA)}`)
+      check('vb 显示 1', vb.textContent === '1', `vb=${vb.textContent}`)
+
+      // 文本绑定也独立：改 a 不动 b 的文本
+      state.a = 2
+      await nextTick()
+      check('再次改 a 后 vb 保持 1（文本隔离 ✓）', vb.textContent === '1', `vb=${vb.textContent}`)
+
+      const failed = results.filter((r) => !r[1])
+      document.getElementById('result').textContent =
+        (failed.length === 0 ? '✅ PASS' : `❌ FAIL（${failed.length} 项）`) +
+        '\n' + results.map((r) => `${r[1] ? '✓' : '✗'} ${r[0]}（${r[2]}）`).join('\n')
+      document.getElementById('result').className = failed.length === 0 ? 'pass' : 'fail'
+    }
+
+    run()
+  </script>
+</body>
+</html>

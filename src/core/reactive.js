@@ -288,6 +288,7 @@ export function effect(fn, options = {}) {
   const { lazy = false, scheduler = null } = options
 
   const _effect = function () {
+    if (_effect._stopped) return
     try {
       // 清理旧依赖
       cleanup(_effect)
@@ -323,6 +324,17 @@ function cleanup(effectFn) {
     _deps[i].delete(effectFn)
   }
   _deps.length = 0
+}
+
+/**
+ * 停止 effect：清空其全部依赖，使其不再被任何数据变化触发。
+ * 用于组件/绑定卸载时清理细粒度 effect。
+ *
+ * 同时置 _stopped 标记，防止"stop 后仍有挂起的调度任务"重新执行并重订阅依赖。
+ */
+export function stop(effectFn) {
+  cleanup(effectFn)
+  effectFn._stopped = true
 }
 
 // ============================================================

@@ -6,8 +6,9 @@
 
 import { Component } from './core/Component.js'
 import { reactive, ref, computed, watch, effect, toRef, toRefs } from './core/reactive.js'
-import { compile } from './core/compile.js'
+import { compile, updateBinding } from './core/compile.js'
 import { scheduleUpdate, flushQueue } from './core/scheduler.js'
+import { createReactiveUpdater } from './core/bindingEffects.js'
 import { register, lookup, registeredDirectives } from './directives/index.js'
 import { DaTransition } from './core/Transition.js'
 import { DaTransitionGroup } from './core/TransitionGroup.js'
@@ -58,6 +59,24 @@ export function nextTick(fn) {
  *     const state = mount('#app', { msg: 'Hello' })
  *   </script>
  */
+/** 已挂载容器的细粒度 stop 引用（按容器索引） */
+const mountedStops = new WeakMap()
+
+/**
+ * 停止 mount 挂载的响应式更新（解除全部绑定订阅）
+ */
+export function unmount(selectorOrEl) {
+  const container = typeof selectorOrEl === 'string'
+    ? document.querySelector(selectorOrEl)
+    : selectorOrEl
+  const stops = mountedStops.get(container)
+  if (!stops) return
+  for (const stop of stops) {
+    try { stop() } catch (e) {}
+  }
+  mountedStops.delete(container)
+}
+
 export function mount(selectorOrEl, data = {}) {
   const container = typeof selectorOrEl === 'string'
     ? document.querySelector(selectorOrEl)
@@ -78,13 +97,19 @@ export function mount(selectorOrEl, data = {}) {
   const result = compile(container, ctx)
   result.mount()
 
-  // 响应式更新
-  effect(() => {
-    for (const key of Object.keys($data._raw || $data)) {
-      void $data[key]
-    }
-    result.update()
-  })
+  // 细粒度依赖追踪：每个绑定一个 effect，只在读取的字段变化时更新自身
+  const stops = []
+  for (const b of result.bindings || []) {
+    if (b.name === 'on' || b.once) continue
+    stops.push(createReactiveUpdater(() => updateBinding(b, ctx)))
+  }
+  for (const t of result.textBindings || []) {
+    if (t.once) continue
+    stops.push(createReactiveUpdater(() => t.update()))
+  }
+
+  // 保存 stop 引用，供 unmount() 解除绑定
+  mountedStops.set(container, stops)
 
   return $data
 }
@@ -123,6 +148,7 @@ const Da = {
 
   // 挂载
   mount,
+  unmount,
 }
 
 export { Da }

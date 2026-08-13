@@ -12,9 +12,10 @@
  * - 插槽系统（默认 + 命名 + 作用域）
  */
 
-import { reactive, effect } from './reactive.js'
-import { compile, compileSlotTemplate, updateTextBindings, resolveBindingArg } from './compile.js'
-import { createComponentUpdater } from './scheduler.js'
+import { reactive } from './reactive.js'
+import { compile, compileSlotTemplate, updateTextBindings, updateBinding } from './compile.js'
+import { createComponentUpdater, scheduleUpdate } from './scheduler.js'
+import { createReactiveUpdater } from './bindingEffects.js'
 import { lookup as lookupDirective } from '../directives/index.js'
 import {
   kebabCase,
@@ -96,8 +97,8 @@ export class Component extends HTMLElement {
     // 8. 创建调度更新函数
     this._scheduledUpdate = createComponentUpdater(this, this._doUpdate)
 
-    // 9. 设置响应式驱动的自动更新
-    this._setupReactiveUpdate()
+    // 9. 细粒度绑定 effect 的 stop 引用（render 后填充）
+    this._bindingStops = []
 
     // 10. 绑定 $emit
     this.$emit = this._emit.bind(this)
@@ -142,10 +143,6 @@ export class Component extends HTMLElement {
       this._defineReactiveProperty(key)
     }
 
-    // 重新运行 effect 以收集新字段的依赖
-    if (this._reactiveEffect) {
-      this._reactiveEffect()
-    }
   }
 
   _defineReactiveProperty(key) {
@@ -161,18 +158,38 @@ export class Component extends HTMLElement {
     })
   }
 
-  /** 设置响应式数据变化时自动触发调度更新 */
-  _setupReactiveUpdate() {
-    this._reactiveEffectFn = () => {
-      const dataKeys = Object.keys(this.$data._raw || this.$data)
-      for (const key of dataKeys) {
-        void this.$data[key]
-      }
-      if (this._mounted) {
-        this._scheduledUpdate()
-      }
+  /**
+   * 细粒度依赖追踪：为每个指令绑定 / 文本绑定建立独立 effect，
+   * 只在表达式实际读取的字段变化时更新自身。
+   * （作用域插槽的 effect 在 _setupScopedSlot 中创建）
+   */
+  _setupReactiveBindings() {
+    const result = this._compileResult
+    if (!result) return
+
+    const afterUpdate = () => this._scheduleOnUpdatedOnce()
+
+    // 指令绑定：da-on 无响应式值、da-once 冻结，跳过
+    for (const b of result.bindings || []) {
+      if (b.name === 'on' || b.once) continue
+      this._bindingStops.push(createReactiveUpdater(() => updateBinding(b, this), afterUpdate))
     }
-    this._reactiveEffect = effect(this._reactiveEffectFn, { lazy: false })
+
+    // 文本插值绑定：da-once 冻结，跳过
+    for (const t of result.textBindings || []) {
+      if (t.once) continue
+      this._bindingStops.push(createReactiveUpdater(() => t.update(), afterUpdate))
+    }
+  }
+
+  /** 每个响应式更新批次触发一次 onUpdated（同批次去重） */
+  _scheduleOnUpdatedOnce() {
+    if (this._onUpdatedQueued) return
+    this._onUpdatedQueued = true
+    scheduleUpdate(() => {
+      this._onUpdatedQueued = false
+      if (this._mounted) this.onUpdated()
+    })
   }
 
   // ───── Props ─────
@@ -343,40 +360,18 @@ export class Component extends HTMLElement {
     const result = this._compileResult
     if (!result) return
 
-    const { bindings = [] } = result
-
-    bindings.forEach((b) => {
-      if (b.once) return // da-once：冻结，不再更新
-      if (!b.directive) return
-
-      // 解析动态参数（da-bind:[expr] / da-on:[expr]）
-      const argChanged = resolveBindingArg(b.binding, this)
-
-      if (argChanged && isFunction(b.directive.unmount)) {
-        // 参数变了，先卸载再重新挂载
-        try { b.directive.unmount(b.el) } catch (e) {}
-        try { b.directive.mount(b.el, b.binding) } catch (e) {}
-        return
-      }
-
-      if (!isFunction(b.directive.update)) return
-
-      // da-on 的事件处理表达式不参与值求值
-      if (b.name !== 'on') {
-        const newValue = evaluateExpression(b.expression, this)
-        b.binding.oldValue = b.binding.value
-        b.binding.value = newValue
-      }
-
-      try {
-        b.directive.update(b.el, b.binding)
-      } catch (e) {
-        console.error(`[Da] directive "${b.name}" update error:`, e)
-      }
-    })
+    for (const b of result.bindings || []) {
+      updateBinding(b, this)
+    }
   }
 
   _cleanupDirectives() {
+    // 停止所有细粒度绑定 effect（指令 / 文本 / 作用域插槽）
+    for (const stop of this._bindingStops) {
+      try { stop() } catch (e) {}
+    }
+    this._bindingStops = []
+
     const result = this._compileResult
     if (!result) return
 
@@ -516,8 +511,10 @@ export class Component extends HTMLElement {
     // 编译模板为渲染函数（缓存模板 DOM，避免每次渲染重复解析）
     const renderFn = compileSlotTemplate(templateHTML, propNames, this)
 
-    // 创建容器元素替换 <slot>
+    // 创建容器元素替换 <slot>（标记后，宿主组件的 compile 会跳过其子树，
+    // 因为插槽内容已由 _renderScopedSlotContent 单独编译）
     const container = document.createElement('span')
+    container._daSlotContainer = true
     container.style.display = 'contents'
     slotEl.parentNode.replaceChild(container, slotEl)
 
@@ -533,8 +530,11 @@ export class Component extends HTMLElement {
 
     this._scopedSlotRenderers.push(renderer)
 
-    // 首次渲染
-    this._renderScopedSlotContent(renderer)
+    // 细粒度 effect：首次运行渲染初始并收集依赖，
+    // 依赖变化时（插槽 prop 表达式或其内容引用的父数据）自动重渲该插槽
+    this._bindingStops.push(
+      createReactiveUpdater(() => this._renderScopedSlotContent(renderer), () => this._scheduleOnUpdatedOnce())
+    )
   }
 
   /** 渲染某个作用域插槽的内容 */
@@ -645,8 +645,8 @@ export class Component extends HTMLElement {
       this._mounted = true
       this.onMounted()
 
-      // 首次渲染后立即触发一次 effect 收集
-      this._scheduledUpdate()
+      // 细粒度依赖追踪：每个绑定/插槽一个 effect，首次运行即渲染并收集依赖
+      this._setupReactiveBindings()
     })
   }
 
