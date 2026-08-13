@@ -22,13 +22,23 @@ const registry = {}
 
 /**
  * 注册一个指令
+ *
+ * 支持两种调用形式：
+ *   register('my-dir', { mount, update, unmount })   // 名称 + 定义
+ *   register({ name: 'my-dir', mount, update, unmount })  // 单个对象（内置指令用）
  */
-export function register(directive) {
-  if (!directive || !directive.name) {
-    console.warn('[Da] invalid directive:', directive)
+export function register(name, definition) {
+  // 兼容对象形式：register({ name, mount, update, unmount })
+  if (name && typeof name === 'object') {
+    definition = name
+    name = definition.name
+  }
+
+  if (!name || !definition) {
+    console.warn('[Da] invalid directive:', name || definition)
     return
   }
-  registry[directive.name] = directive
+  registry[name] = definition
 }
 
 /**

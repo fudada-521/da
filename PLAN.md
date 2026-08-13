@@ -82,10 +82,10 @@ src/
 
 ### ⚠️ 已知限制（见 [TODO.md](TODO.md) 第三期）
 
-- `da-for` 全量重建节点（非 keyed diff）→ `da-transition-group` 的 leave/FLIP 动画不生效
-- `da-once` / `da-pre` 为占位实现（仅打标记，未真正跳过编译/更新）
-- getter 未纳入依赖追踪（依赖 evaluateExpression 的实例兜底）
-- 更新为粗粒度：任何字段变化触发全量渲染
+- `da-for` keyed diff 已实现（增删/重排按 key 复用节点、触发 FLIP），**删除节点的 leave 动画**仍需 transition-group 接管渲染
+- 更新为粗粒度：任何字段变化触发全量渲染（P2 细粒度依赖追踪）
+- getter 类表达式经 `evaluateExpression` 实例兜底生效，未形式化依赖追踪（并入 P2）
+- `nextTick` 当前为微任务语义，非"下一次 DOM 更新后"（远期修正）
 
 ---
 
@@ -102,9 +102,9 @@ src/
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | **P0 正确性核心** | 数组响应式、trigger 分发 `_scheduler`、da-model 与内置组件约定统一 | ✅ 2026-07 完成 |
-| **P1 功能落地** | `da-for` keyed diff、`da-once`/`da-pre` 真正实现、getter 纳入响应式 | ⬜ |
+| **P1 功能落地** | `da-for` keyed diff、`da-once`/`da-pre` 真正实现、getter 表达式兜底 | ✅ 2026-07 完成 |
 | **P2 架构演进** | 细粒度依赖追踪、编译/求值缓存、测试体系、类型定义、DevTools | ⬜ |
-| **P3 文档一致性** | 修正 README 中"文档写了但用不了"的特性说明 | ⬜ |
+| **P3 文档一致性** | 修正 README 中"文档写了但用不了"的特性说明与 register API 契约 | ✅ 2026-08 完成 |
 
 ### 🔭 远期
 - `<DaTeleport>` / `<DaKeepAlive>` 内置组件

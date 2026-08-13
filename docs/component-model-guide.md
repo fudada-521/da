@@ -20,7 +20,7 @@
 `mount()` 是 Da 框架的轻量入口，适合**无需自定义组件**的场景——直接给一段 HTML 注入响应式数据。
 
 ```js
-import { mount } from "dada";
+import { mount } from "../src/da.js";
 
 const state = mount("#app", {
     msg: "",

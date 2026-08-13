@@ -201,7 +201,7 @@ Props：`name`、`tag`（包裹标签）、`moveClass`（移动动画类名）�
 用 `Da.register()` 注册自定义指令：
 
 ```javascript
-import { register } from "dada";
+import { register } from "./src/da.js";
 
 register("my-directive", {
     mount(el, binding) {
@@ -325,7 +325,7 @@ Da.nextTick(fn);        // 下一次 DOM 更新后执行
 Da.mount(selector, data);  // 独立挂载（无需定义组件）
 
 // 指令
-Da.register({ name, mount, update, unmount }); // 注册自定义指令
+Da.register("my-dir", { mount, update, unmount }); // 注册自定义指令
 Da.lookup("my-dir");    // 查找指令
 Da.registeredDirectives(); // 获取已注册指令列表
 
