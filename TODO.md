@@ -174,7 +174,13 @@
   - getter 表达式自动获得依赖追踪；作用域插槽按自身读取字段触发
   - `Da.unmount()` 停止全部绑定 effect；`stop()` 加固防"stop 后挂起 flush 重订阅"竞态
 - [ ] 编译/求值缓存（缓存模板 parse 结果 + `evaluateExpression` 的 Function）
-- [ ] 测试体系（vitest + happy-dom，覆盖响应式/组件/指令）
+- [x] 测试体系（vitest + happy-dom，覆盖响应式/组件/指令，81 用例）
+  - [x] `tests/reactive.test.js`（32）— reactive/ref/computed/effect/watch/toRef(s)、数组拦截、scheduler 分发
+  - [x] `tests/component.test.js`（21）— 注册/props/生命周期/渲染/插槽/独立挂载
+  - [x] `tests/directives.test.js`（28）— bind/on/if链/for/model/show/text/html/once/cloak/pre/自定义指令
+  - [x] 顺带修复 `parseDirective` 不解析"无 arg 的修饰符"缺陷：`da-model.number`/`.lazy`/`.trim` 被解析成指令名 `model.number`，导致 README 文档化的 `.number` 修饰符完全不生效（示例 FormComponents.js 亦受此影响）
+  - ⚠️ happy-dom 限制：HTML 解析会剥离 `#default` 属性名（真实浏览器保留），作用域插槽测试用 `da-slot:default` 等价写法
+  - ⚠️ 已知边角：两个相邻 `da-if` 兄弟时，第二个的 resolveChain 不会被调用（须用 da-if + da-else-if/else 链）；`v-for` 内作用域插槽的 `:item` 作用域变量无法从宿主解析（TODO 划掉项）
 - [ ] 类型定义（`.d.ts`）
 - [ ] DevTools / 错误边界 / `nextTick` 语义修正
 - [x] 补漏（2026-08 审计发现 5 项全部闭环）：

@@ -319,13 +319,21 @@ function parseDirective(attrName, attrValue) {
 
     let rest = attrName.slice(usedPrefix.length);
 
-    const parts = rest.split(":");
-    let name = parts[0];
-    let argWithModifiers = parts.slice(1).join(":") || "";
+    // 拆出 arg 部分（第一个 ':' 之后）
+    const colonIdx = rest.indexOf(":");
+    const nameAndMods = colonIdx === -1 ? rest : rest.slice(0, colonIdx);
+    const argWithModifiers = colonIdx === -1 ? "" : rest.slice(colonIdx + 1);
+
+    // 名字本身可能带修饰符：model.number → name=model, modifiers={ number }
+    const nameParts = nameAndMods.split(".");
+    const name = nameParts[0];
+
+    const modifiers = {};
+    for (let i = 1; i < nameParts.length; i++) {
+        modifiers[nameParts[i]] = true;
+    }
 
     let arg = "";
-    const modifiers = {};
-
     if (argWithModifiers) {
         const modifierParts = argWithModifiers.split(".");
         arg = modifierParts[0];
