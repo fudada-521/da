@@ -69,7 +69,12 @@ export class DaTransition extends HTMLElement {
       const show = this.getAttribute('show') !== 'false'
 
       if (show) {
-        this._enterImmediate()
+        if (this._appear) {
+          // appear：初始渲染也执行进入过渡
+          this._performEnter()
+        } else {
+          this._enterImmediate()
+        }
       }
 
       this._mounted = true
