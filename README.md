@@ -172,16 +172,21 @@ Props：`show`（显示/隐藏）、`name`（类名前缀）、`mode`（`out-in`
 </da-transition-group>
 ```
 
-Props：`name`、`tag`（包裹标签）、`moveClass`（移动动画类名）、`appear`。
+Props：`name`、`tag`（包裹标签）、`move-class`（移动动画类名，默认 `{name}-move`）、`appear`。
 
 ### 🧰 内置 UI 组件
 
-框架自带两个常用的基础组件，开箱即用：
+框架自带两个常用的基础组件。`<da-button>` / `<da-input>` 需要显式 `import`（副作用注册）：
+
+```js
+import '../src/components/Button.js'
+import '../src/components/Input.js'
+```
 
 | 组件           | 标签名                | 说明                                      |
 | ------------ | ------------------ | --------------------------------------- |
 | **DaButton** | `<da-button>`      | 按钮（type/size/disabled/loading/block）    |
-| **DaInput**  | `<da-input>`       | 输入框（model/type/placeholder/clearable）   |
+| **DaInput**  | `<da-input>`       | 输入框（modelValue/type/placeholder/clearable）|
 
 ```html
 <da-button type="primary" @click="submit">提交</da-button>
