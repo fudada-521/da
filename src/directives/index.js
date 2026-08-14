@@ -59,6 +59,9 @@ export function registeredDirectives() {
 register(vBind)
 register(vOn)
 register(vIf)
+// da-else-if / da-else 复用同一个 if 指令（链由 compile 后置解析统一处理）
+register('else-if', vIf)
+register('else', vIf)
 register(vFor)
 register(vModel)
 register(vShow)

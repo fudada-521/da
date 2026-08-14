@@ -76,6 +76,19 @@ export function compile(templateRoot, instance) {
                     console.error("[Da compile] directive mount error:", e);
                 }
             });
+            // 条件链：等 da-if/da-else-if/da-else 所有成员挂载、标记就绪后再整体解析。
+            // 只对链头调用（前面没有同链兄弟的元素），避免同链被重复解析。
+            bindings.forEach((b) => {
+                const prev = b.el.previousElementSibling;
+                const isChainHead = b.el._daIfType && (!prev || !prev._daIfType);
+                if (isChainHead && b.directive && isFunction(b.directive.resolveChain)) {
+                    try {
+                        b.directive.resolveChain(b.el);
+                    } catch (e) {
+                        console.error("[Da compile] resolveChain error:", e);
+                    }
+                }
+            });
             // 初始渲染文本插值（da-once 冻结后不再更新，必须在此渲染）
             textBindings.forEach((b) => {
                 b.update();
