@@ -29,7 +29,7 @@ export function define(name, componentClass) {
 }
 
 /** 当前版本 */
-export const version = '0.2.0'
+export const version = '0.2.1'
 
 /**
  * 下一次 DOM 更新循环后执行回调
